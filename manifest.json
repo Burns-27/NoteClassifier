@@ -1,11 +1,10 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
-	"version": "1.0.0",
+	"id": "noteclassifier",
+	"name": "NoteClassifer",
+	"version": "0.0.0",
 	"minAppVersion": "1.13.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "A organization tool, allowing you to define classes of notes based on their frontmatter or tags. based on the classification, you can define file location, requried properties, and templates. ",
+	"author": "burns-27",
+	"authorUrl": "https://github.com/Burns-27/",
 	"isDesktopOnly": false
 }

@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
-	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"name": "NoteClassifier",
+	"version": "0.0.0",
+	"description": "NoteClassifier allows you to define classes for your notes, and based on that, assign required frontmatter, move to specified folders, and manage classifications",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
