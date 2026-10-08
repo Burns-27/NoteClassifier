@@ -17,7 +17,12 @@ export class PropertyClass extends BaseClassRule<FlatPropertyClass>{
     this.properties= data.rule
   }
   match(file: midFile): boolean{
-    //TODO (Property Rule) build out match logic
-    return false 
+    const frontmatter = file.metadataCache.frontmatter
+    if (!frontmatter) return false
+    for (const rule of this.properties) {
+      if (!frontmatter[rule.propertyName]) return false
+      if (frontmatter[rule.propertyName] !== rule.propertyValue) return false
+    }
+    return true
   }
 }
