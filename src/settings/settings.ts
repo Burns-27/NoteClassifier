@@ -1,9 +1,10 @@
-import { App, PluginSettingTab,  SettingDefinitionItem } from 'obsidian';
+import { App, PluginSettingTab,  SettingDefinitionItem, SettingDefinitionPage } from 'obsidian';
 import NoteClassifier from '../main';
-import { FlatClass } from '../Rules/Classification';
+import { FlatClass, NodeClass } from '../Rules/Classification';
 
 export interface NoteClassifierSettings {
-	rules:Array<FlatClass> ;
+	rules: Array<FlatClass>;
+	nextID: number;
 }
 
 export const DEFAULT_SETTINGS: NoteClassifierSettings = {
@@ -19,16 +20,18 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{
-				name: 'Settings #1',
-				desc:"It's a secret",
-				control: {
-					type: "text",
-					key: 'mySetting',
-					placeholder:"Enter your Secret"
-				}
+				heading: 'Classes',
+				type:"list",
+				items: this.plugin.rootNodes.map((rule) => ({ 
+					name: rule.rule.name,
+					searchable: false,
+					action: () => {
+
+				}))
 			}
 		]
 	}
-
+	
+	}
 	
 }

@@ -11,7 +11,6 @@ import { Hydrate } from './settings/loadRules';
 import { TClsFile } from './classification/ClassifiedFile';
 
 export default class NoteClassifier extends Plugin {
-
 	settings!: NoteClassifierSettings;
 	flatClassArray!: Array<TClass>;
 	rootNodes!: Array<NodeClass>;
@@ -48,11 +47,10 @@ export default class NoteClassifier extends Plugin {
 		);
 		this.loadRules()
 	}
-	async classifyActiveFile():TClsFile{
-		
-	}
-	async moveFile() {
-		
+	nextID(): number{
+		const nextID = this.settings.nextID
+		this.settings.nextID++
+		return nextID
 	}
 	loadRules() {
 		const { flatMap, rootNodes } = Hydrate(this.settings)

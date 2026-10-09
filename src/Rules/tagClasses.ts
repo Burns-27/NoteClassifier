@@ -1,4 +1,3 @@
-import { getAllTags } from "obsidian";
 import { midFile } from "../classification/ClassifiedFile";
 import { baseClass, BaseClassRule } from "./Classification";
 
@@ -8,34 +7,45 @@ interface tagRule {
 }
 export interface FlatTagClass extends baseClass {
   type: 'tag',
-  rule: tagRule
+  rule: tagRule[]
 }
 
 export class TagClass extends BaseClassRule<FlatTagClass>{
-  private tag: Array<string>;
-  private matchStyle: "includes" | "exact";
+  private tagRules: tagRule[]
   constructor(data: FlatTagClass) {
     super(data)
-    this.matchStyle = data.rule.match
-    if (this.matchStyle == "includes") {
-      
-      this.tag = data.rule.tag.split(/[,//]/)
-    } 
-    if (this.matchStyle == "exact") {
-      this.tag = data.rule.tag.split(",")
-    }
+    this.tagRules = data.rule
   }
 
   match(file: midFile): boolean{
     if (!file.tags || file.tags.length== 0 ) return false
-    if (this.matchStyle == "includes") return this.includeMatch(tags)
-    return false
+    for (const rule of this.tagRules) {
+      let check:boolean = false
+      switch (rule.match) {
+        case "includes":
+          check = this.includeMatch(file.tags, rule)
+          break
+        case "exact":
+          check = this.exactMatch(file.tags, rule)
+          break
+      }
+      if (!check) return false
+    }
+    return true
   }
-  private includeMatch(tags: Array<string>): boolean{
-    return false
+  private includeMatch(tags: Array<string>, rule: tagRule): boolean{
+    const splitTags:Array<string>=[]
+    for (const tag of tags) {
+      splitTags.push(...tag.split("/"))
+    }
+    const check = splitTags.find((t) => t == rule.tag)
+    if (!check) return false
+    return true
   }
 
-  private exactMatch(tags: Array<string>): boolean{
-    return false
+  private exactMatch(tags: Array<string>, rule: tagRule): boolean{
+    const check = tags.find((t) => t == rule.tag)
+    if (!check) return false
+    return true
   }
 }
