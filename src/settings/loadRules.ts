@@ -22,6 +22,5 @@ export function Hydrate(settings: NoteClassifierSettings): { flatMap: Array<TCla
       rootNodes.push(currentNode)
     }
   }
-
   return {flatMap: flatClassArray, rootNodes: rootNodes}
 }
