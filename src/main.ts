@@ -5,10 +5,9 @@ import {
 	DEFAULT_SETTINGS,
 	NoteClassifierSettings,
 	NoteClassifierSettingTab,
-} from './settings/settings';
-import { NodeClass, TClass } from './Rules/Classification';
-import { Hydrate } from './settings/loadRules';
-import { TClsFile } from './classification/ClassifiedFile';
+} from './settings/settingsTab';
+import { NodeClass, TClass } from './classification/Classification';
+import { Hydrate } from './settings/settingsUtil';
 
 export default class NoteClassifier extends Plugin {
 	settings!: NoteClassifierSettings;
