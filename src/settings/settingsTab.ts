@@ -16,6 +16,8 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		await this.plugin.saveSettings()
 	}
 	getSettingDefinitions(): SettingDefinitionItem[] {
+		const rootNodes = [...settingUtil.rootNodes()]
+		console.debug("root nodes", rootNodes)
 		return [
 			{
 				name: "Debug Mode",
@@ -77,7 +79,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 					name: "Add Classification",
 					action: ()=>this.newClsModal()
 				},
-				items: settingUtil.rootNodes.map((rule, index) => this.getRulePage(rule, index))
+				items: rootNodes.map((rule, index) => this.getRulePage(rule, index))
 			}
 		]
 	}
@@ -99,19 +101,20 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				type: "page",
 				name: "Error",
 				items: [
-				{
-					name: "Classification Not found",
-					desc:"This Classification was not found, please reload app, or plugin"
-				}
-			]
+					{
+						name: "Classification Not found",
+						desc:"This Classification was not found, please reload app, or plugin"
+					}
+				]
 			}
 		}
 		const flatRule = flatRuleRes.cls
+		//console.debug("Node for Page",rule)
 		const cls = rule.classification
 		//const children = rule.children
 		return {
 			type: "page",
-			//id:ruleID,
+			id:`${flatRule.id}.${index}`,
 			name: `Classification: ${flatRule.name}`,
 			items: [
 				{
@@ -121,7 +124,10 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						cls.getDesc(setting.descEl)
 						setting.addExtraButton((button) => {
 							button.setIcon("pencil")
-							button.onClick(()=>this.openClsModal(cls, flatRule))
+							button.onClick(() => {
+								//console.debug("Edit CLs button clicked")
+								this.openClsModal(cls, flatRule)
+							})
 						})
 					})
 				},
@@ -135,8 +141,10 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		}
 	}
 	openClsModal(cls: TCls, flatCls: FlatCls) {
-		new ClsModal(this.plugin, flatCls, cls, (newCls: FlatCls) => {
-			settingUtil.updateCls(newCls)
+		//console.debug("open cls modal ran")
+		new ClsModal(this.plugin, flatCls, cls,  (newCls: FlatCls) => {
+			const updateResults = settingUtil.updateCls(newCls)
+			console.debug("Cls Modal closed, cls updated", updateResults)
 			void this.plugin.saveSettings()
 			this.update()
 		}).open()
@@ -145,5 +153,4 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		const { flatCls, cls } = settingUtil.newCls(parentID)
 		this.openClsModal(cls, flatCls)
 	}
-	
 }

@@ -1,4 +1,4 @@
-import { settingUtil } from "../settings/settingsUtil"
+
 import { midFile } from "../types/files.types"
 import { Rule } from "../types/rules.types"
 
@@ -38,7 +38,7 @@ class ExactPropertyRule implements PropertyRule {
   constructor(data: FlatExactPropertyRule) {
     this.propertyName = data.propertyName
     this.propertyValue = data.propertyValue
-    this.id = settingUtil.nextID()
+    this.id = data.id
     this.desc = `File Has '${this.propertyName}' Property with '${this.propertyValue}' as its value`
   }
   match(file: midFile): boolean{

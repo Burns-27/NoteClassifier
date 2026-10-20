@@ -1,4 +1,4 @@
-import { settingUtil } from "../settings/settingsUtil"
+
 import { midFile } from "../types/files.types"
 import { Rule } from "../types/rules.types"
 
@@ -38,7 +38,7 @@ class ExactTagRule implements TagRule{
   readonly desc: string
   constructor(data: FlatExactTagRule) {
     this.tag = data.tag
-    this.id = settingUtil.nextID()
+    this.id = data.id
     this.desc = `File has ${data.tag}, exactly`
   }
 
@@ -61,7 +61,7 @@ class IncludeTagRule implements TagRule {
   readonly desc:string
   constructor(data: FlatIncludeTagRule) {
     this.tag = data.tag
-    this.id = settingUtil.nextID()
+    this.id = data.id
     this.desc = `File Includes ${data.tag}`
   }
   match(file: midFile): boolean{

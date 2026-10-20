@@ -24,6 +24,7 @@ export class RuleModal extends Modal{
       this.tag = `${rule.tag}`
     }
     this.setCloseCallback(() => {
+      console.debug("CloseCallback Called - Rules")
       const check = this.generateRule()
       if (!check) {
         new Notice("Error, rule not saved. ")
@@ -62,11 +63,15 @@ export class RuleModal extends Modal{
     return false
   }
   display() {
+    console.debug("Rules Modal Refreshed")
+    this.contentEl.empty()
     const typesetting = new Setting(this.contentEl)
     typesetting.setName("Rule type")
     typesetting.addDropdown((dropdown) => {
       dropdown.addOption("property", "Property").addOption("tag", "Tag")
+      dropdown.setValue(this.type)
       dropdown.onChange((value) => {
+        console.debug(`Rule type changed to ${this.type}`)
         switch (value) {
           case "property":
             this.type = "property"
