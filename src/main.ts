@@ -2,22 +2,17 @@ import {
 	Plugin,
 } from 'obsidian';
 import {
-	DEFAULT_SETTINGS,
-	NoteClassifierSettings,
 	NoteClassifierSettingTab,
 } from './settings/settingsTab';
-import { NodeClass, TClass } from './classification/Classification';
-import { Hydrate } from './settings/settingsUtil';
+import { NoteClassifierSettings } from './types/settings.types';
+import { settingUtil } from './settings/settingsUtil';
+
 
 export default class NoteClassifier extends Plugin {
 	settings!: NoteClassifierSettings;
-	flatClassArray!: Array<TClass>;
-	rootNodes!: Array<NodeClass>;
 	async onload() {
 		await this.loadSettings();
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-
+		this.settings= settingUtil.get()
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
 		
 		this.addCommand({
@@ -38,24 +33,12 @@ export default class NoteClassifier extends Plugin {
 	}
 	
 	onunload() {}
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<NoteClassifierSettings>,
-		);
-		this.loadRules()
-	}
 	nextID(): number{
 		const nextID = this.settings.nextID
 		this.settings.nextID++
 		return nextID
 	}
-	loadRules() {
-		const { flatMap, rootNodes } = Hydrate(this.settings)
-		this.flatClassArray = flatMap
-		this.rootNodes = rootNodes
-	}
+	
 	async updateFile() {
 		
 	}
@@ -64,7 +47,10 @@ export default class NoteClassifier extends Plugin {
 	}
 	
 	async saveSettings() {
-		await this.saveData(this.settings);
-		this.loadRules();
+		await this.saveData(settingUtil.get());
+	}
+	async loadSettings() {
+		const data = await this.loadData() as Partial<NoteClassifierSettings>;
+		settingUtil.updateAll(data)
 	}
 }

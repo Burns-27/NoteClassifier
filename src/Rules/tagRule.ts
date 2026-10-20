@@ -1,23 +1,25 @@
-import { midFile } from "../classification/ClassifiedFile";
+import { settingUtil } from "../settings/settingsUtil"
+import { midFile } from "../types/files.types"
+import { Rule } from "../types/rules.types"
 
-export interface TagRule {
+
+export interface TagRule extends Rule{
   readonly type:"tag"
   readonly matchType: "includes" | "exact",
   tag: string,
-  readonly desc:string,
-  match: (file: midFile) => boolean,
 }
 
 type FlatExactTagRule = {
   type: "tag",
+  id:string,
   matchType: "exact",
   tag: string,
 }
 type FlatIncludeTagRule = {
   type: "tag",
+  id:string, 
   matchType: "include",
   tag: string,
-  desc:string
 }
 export type FlatTagRule = FlatExactTagRule | FlatIncludeTagRule
 export function NewTagRule(rule: FlatTagRule): TagRule{
@@ -32,9 +34,11 @@ class ExactTagRule implements TagRule{
   readonly type = "tag"
   readonly matchType = "exact";
   tag: string
+  id: string
   readonly desc: string
   constructor(data: FlatExactTagRule) {
     this.tag = data.tag
+    this.id = settingUtil.nextID()
     this.desc = `File has ${data.tag}, exactly`
   }
 
@@ -44,15 +48,20 @@ class ExactTagRule implements TagRule{
     if (!check) return false
     return true
   }
+  getDesc(): string{
+    return `File has #${this.tag}`
+  }
 }
 
 class IncludeTagRule implements TagRule {
   readonly type = "tag"
   readonly matchType = "includes";
   tag: string
+  id: string
   readonly desc:string
   constructor(data: FlatIncludeTagRule) {
     this.tag = data.tag
+    this.id = settingUtil.nextID()
     this.desc = `File Includes ${data.tag}`
   }
   match(file: midFile): boolean{
@@ -64,5 +73,8 @@ class IncludeTagRule implements TagRule {
     const check = splitTags.find((t) => t == this.tag)
     if (!check) return false
     return true
+  }
+  getDesc() {
+    return `File tags includes '${this.tag}'`
   }
 }

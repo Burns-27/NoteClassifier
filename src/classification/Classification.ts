@@ -8,7 +8,7 @@ export class Classification implements TCls{
   readonly id: string;
   readonly parentID?: string| null;
   readonly name: string;
-  private rules: TRule[];
+  rules: TRule[];
   private destination: string
   requriedProperties: string[];
   constructor(data: FlatCls) {
@@ -31,9 +31,9 @@ export class Classification implements TCls{
   getPath(file: TClsFile): string{
     return `${file.startPath}/${this.destination}`
   };
-  getRuleDesc(): string {
+  getDesc() {
     let desc:string[] = []
-    this.rules.forEach((rule) => { desc.push(rule.desc) })
+    this.rules.forEach((rule) => { desc.push(rule.getDesc()) })
     return desc.join("/n - ")
   }
 }

@@ -1,19 +1,19 @@
 import { App, PluginSettingTab,  SettingDefinitionItem, SettingGroupItem } from 'obsidian';
 import NoteClassifier from '../main';
-import { FlatClass, NodeClass } from '../classification/Classification';
-
-
-
+import { NodeClass } from '../classification/Classification';
+import { settingUtil } from './settingsUtil';
+import { FlatCls, TCls } from '../types/classifications.types';
+import { ClsModal } from './ClsModal';
 
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
-	flatRules: FlatClass[];
-	rootNodes: NodeClass[];
 	constructor(app: App, plugin: NoteClassifier) {
 		super(app, plugin);
 		this.plugin = plugin;
-		this.flatRules = plugin.settings.rules
-		this.rootNodes = plugin.rootNodes
+	}
+	async setControlValue(key: string, value: unknown):  Promise<void> {
+		settingUtil.updateMain({ [key]: value })
+		await this.plugin.saveSettings()
 	}
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
@@ -75,37 +75,16 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				type: "list",
 				addItem: {
 					name: "Add Classification",
-					action: ()=>this.openNewClsModal()
+					action: ()=>this.newClsModal()
 				},
-				items: this.rootNodes.map((rule, index) => this.getRulePage(rule, index))
+				items: settingUtil.rootNodes.map((rule, index) => this.getRulePage(rule, index))
 			}
 		]
 	}
-	openNewClsModal(parentID?: string) {
-		const newClassification: FlatClass = {
-			id: this.plugin.nextID().toString(),
-			name: "New Classificaiton",
-			destination: "",
-			...parentID ? { parentID: parentID } : {},
-			requriedProperties: [],
-			rules:[]
-		}
-		new ClassificationModal(this.app, this.plugin, newClassification, (cls) => {
-			this.flatRules.push(cls)
-			void this.plugin.saveSettings()
-			this.update()
-		}).open()
-	}
-	openClassificationModal(cls:FlatClass) {
-		new ClassificationModal(this.app, this.plugin, cls, (newCls) => {
-			cls = newCls
-			void this.plugin.saveSettings()
-			this.update()
-		}).open()
-	}
+	
 	getRulePage(rule: NodeClass, index: number): SettingGroupItem {
-		const flatRule = this.flatRules.find((r) => r.id == rule.classification.id)
-		if (!flatRule) return {
+		const flatRuleRes = settingUtil.getFlatCls(rule.classification.id)
+		if (!flatRuleRes.success) return {
 			type: "page",
 			name: "Error",
 			items: [
@@ -115,8 +94,20 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				}
 			]
 		}
-		const ruleID = rule.classification.id
-		const ClassificationRules = rule.classification.getRuleDesc()
+		if (!(flatRuleRes.type === "flat CLs Get")) {
+			return {
+				type: "page",
+				name: "Error",
+				items: [
+				{
+					name: "Classification Not found",
+					desc:"This Classification was not found, please reload app, or plugin"
+				}
+			]
+			}
+		}
+		const flatRule = flatRuleRes.cls
+		const cls = rule.classification
 		//const children = rule.children
 		return {
 			type: "page",
@@ -124,34 +115,35 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			name: `Classification: ${flatRule.name}`,
 			items: [
 				{
-					name: "Name",
-					desc: flatRule.name
-				},
-				{
-					name: "Destination Folder",
-					desc: flatRule.destination
-				},
-				{
-					name: "Required Properties",
-					desc: flatRule.requriedProperties.join(",/n")
-				},
-				{
-					name: "Rules",
-					desc: ClassificationRules
-				},
-				{
-					name: "Edit Classification",
-					action: ()=>this.openClassificationModal(flatRule)
+					name: "Description",
+					render: ((setting) => {
+						setting.setName("Description")
+						cls.getDesc(setting.descEl)
+						setting.addExtraButton((button) => {
+							button.setIcon("pencil")
+							button.onClick(()=>this.openClsModal(cls, flatRule))
+						})
+					})
 				},
 				{
 					heading: "Child Classifications",
 					type: "list",
-					addItem: { name: "Add Child Classificaiton", action: () => this.openNewClsModal(ruleID) },
+					addItem: { name: "Add Child Classificaiton", action: () => this.newClsModal(flatRule.id) },
 					items: rule.children.map((child, index)=>this.getRulePage(child,index ))
-					
-					
 				}
 			]
 		}
 	}
+	openClsModal(cls: TCls, flatCls: FlatCls) {
+		new ClsModal(this.plugin, flatCls, cls, (newCls: FlatCls) => {
+			settingUtil.updateCls(newCls)
+			void this.plugin.saveSettings()
+			this.update()
+		})
+	}
+	newClsModal(parentID?:string) {
+		const { flatCls, cls } = settingUtil.newCls(parentID)
+		this.openClsModal(cls, flatCls)
+	}
+	
 }

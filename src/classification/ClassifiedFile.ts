@@ -1,8 +1,10 @@
 import { CachedMetadata, FrontMatterCache, getAllTags, TFile } from "obsidian";
-import { ActionResult } from "../logger";
+
 import NoteClassifier from "../main";
 import { midFile, TClsFile } from "../types/files.types";
 import { TCls } from "../types/classifications.types";
+import { settingUtil } from "../settings/settingsUtil";
+import { ActionResult } from "../types/responses.types";
 
 export class ClsFile implements TClsFile {
   readonly TFile: TFile;
@@ -28,13 +30,19 @@ export class ClsFile implements TClsFile {
       this.tags = tags
     }
   } 
-  static create(file: TFile, ncp: NoteClassifier): ClsFile | ActionResult{
+  static create(file: TFile, ncp: NoteClassifier): ActionResult{
     const cache = ncp.app.metadataCache.getFileCache(file)
     if (!cache) return { success: false, message: "No Metadata found" }
     const tags= getAllTags(cache)
-    const cls = ncp.rootNodes.find((rule) => rule.search({ TFile: file, metadataCache: cache , tags:tags}))
-    if (!cls) return { success: false, message: "No matching Classification" }
-    return new ClsFile({TFile:file, metadataCache:cache, tags:tags}, cls.classification)
+    const matchRes = settingUtil.matchCls({TFile:file, metadataCache:cache, tags:tags})
+    if (!matchRes.success) return matchRes
+    if(!(matchRes.type === "cls match")) return {success:false, message: "Wrong Result from match", context:{res:matchRes}}
+    const cls = new ClsFile({ TFile: file, metadataCache: cache, tags: tags }, matchRes.cls)
+    return {
+      success: true,
+      type: "note cls",
+      note:cls
+    }
   }
 }
 
