@@ -139,7 +139,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			settingUtil.updateCls(newCls)
 			void this.plugin.saveSettings()
 			this.update()
-		})
+		}).open()
 	}
 	newClsModal(parentID?:string) {
 		const { flatCls, cls } = settingUtil.newCls(parentID)
