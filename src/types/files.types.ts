@@ -1,4 +1,5 @@
 import { CachedMetadata, FrontMatterCache, TFile } from "obsidian";
+import { ActionResult } from "./responses.types";
 
 export interface TClsFile {
   readonly TFile: TFile, 
@@ -10,8 +11,8 @@ export interface TClsFile {
   /*
   validateProperties: () => ActionResult,
   addMissingProperties:()=> ActionResult,
-  move: () => ActionResult, 
   */
+ getDestination: () => ActionResult, 
 }
 export type midFile = {
   TFile: TFile,

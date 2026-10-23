@@ -8,7 +8,7 @@ type FailRes = {
   context?:Record<string,unknown>
 }
 
-type SuccessRes = ClsRes|FlatClsRes|ClsMatchRes|NoteClsRes
+type SuccessRes = ClsRes|FlatClsRes|ClsMatchRes|NoteClsRes|ClsPathRes|ClsPropsRes|RuleMatchRes
 
 type ClsRes = {
   success:true, 
@@ -30,4 +30,20 @@ type NoteClsRes = {
   success: true,
   type: "note cls",
   note: TClsFile
+}
+
+type ClsPathRes = {
+  success: true,
+  type: "ClsPath",
+  path:string[], 
+}
+type ClsPropsRes = {
+  success: true,
+  type: "ClsProps",
+  props:string[]
+}
+
+type RuleMatchRes = {
+  success: true,
+  type:"ruleMatch"
 }

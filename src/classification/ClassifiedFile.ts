@@ -1,10 +1,9 @@
-import { CachedMetadata, FrontMatterCache, getAllTags, TFile } from "obsidian";
-
-import NoteClassifier from "../main";
+import { getAllTags, type CachedMetadata, type FrontMatterCache, type TFile } from "obsidian";
 import { midFile, TClsFile } from "../types/files.types";
 import { TCls } from "../types/classifications.types";
 import { settingUtil } from "../settings/settingsUtil";
 import { ActionResult } from "../types/responses.types";
+import { appUtils } from "../tools/AppUtils";
 
 export class ClsFile implements TClsFile {
   readonly TFile: TFile;
@@ -30,8 +29,8 @@ export class ClsFile implements TClsFile {
       this.tags = tags
     }
   } 
-  static create(file: TFile, ncp: NoteClassifier): ActionResult{
-    const cache = ncp.app.metadataCache.getFileCache(file)
+  static create(file: TFile): ActionResult{
+    const cache = appUtils.getFileCache(file)
     if (!cache) return { success: false, message: "No Metadata found" }
     const tags= getAllTags(cache)
     const matchRes = settingUtil.matchCls({TFile:file, metadataCache:cache, tags:tags})
@@ -42,6 +41,11 @@ export class ClsFile implements TClsFile {
       success: true,
       type: "note cls",
       note:cls
+    }
+  }
+  getDestination(): ActionResult{
+    return {
+      success:false
     }
   }
 }

@@ -6,13 +6,15 @@ import {
 } from './settings/settingsTab';
 import { NoteClassifierSettings } from './types/settings.types';
 import { settingUtil } from './settings/settingsUtil';
+import { appUtils } from './tools/AppUtils';
 
 
 export default class NoteClassifier extends Plugin {
 	settings!: NoteClassifierSettings;
 	async onload() {
 		await this.loadSettings();
-		this.settings= settingUtil.get()
+		this.settings = settingUtil.get()
+		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
 		
 		this.addCommand({

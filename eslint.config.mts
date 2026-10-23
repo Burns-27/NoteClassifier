@@ -12,7 +12,7 @@ export default defineConfig(
 		'main.js',
 		'package.json',
 		'package-lock.json',
-		'tsconfig.json',
+		'tsconfig.json', 'jest.config.js'
 	]),
 	{
 		languageOptions: {
@@ -27,6 +27,13 @@ export default defineConfig(
 				extraFileExtensions: ['.json'],
 			},
 		},
+	}, {
+		files: ["**/*.test.ts"],
+	languageOptions:{
+		globals: {
+				...globals.jest
+			}
+		}
 	},
 	...obsidianmd.configs.recommended,
 );

@@ -13,6 +13,7 @@ const getSettings = (): NoteClassifierSettings => {
   return settings
 }
 const getRootNodes = (): Array<NodeClass> => {
+  buildClsMap()
   buildNodeTree()
   return nodeTree
 }
@@ -25,6 +26,7 @@ function buildClsMap(){
 
 function buildNodeTree() {
   nodeTree = []
+  nodeMap.clear()
   clsMap.forEach((cls, key)=> nodeMap.set(key, new NodeClass(cls)) )
   nodeMap.forEach((node, key) => {
     if (!node.classification.parentID) {

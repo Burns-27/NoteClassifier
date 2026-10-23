@@ -1,5 +1,7 @@
 
+import { devlog } from "../logger"
 import { midFile } from "../types/files.types"
+import { ActionResult } from "../types/responses.types"
 import { Rule } from "../types/rules.types"
 
 
@@ -41,12 +43,30 @@ class ExactPropertyRule implements PropertyRule {
     this.id = data.id
     this.desc = `File Has '${this.propertyName}' Property with '${this.propertyValue}' as its value`
   }
-  match(file: midFile): boolean{
+  match(file: midFile): ActionResult{
     const frontmatter = file.metadataCache.frontmatter
-    if (!frontmatter) return false
-    if (!frontmatter[this.propertyName]) return false
-    if (frontmatter[this.propertyName] !== this.propertyValue) return false
-    return true
+    if (!frontmatter) {
+      devlog.test("No frontmatter found")
+      return {
+      success: false,
+      message:"No Frontmatter on file"
+    }}
+    if (!frontmatter[this.propertyName]) {
+      devlog.test("Property doesnt exist", {filesFrontmatter:frontmatter, property:this.propertyName})
+      return {
+      success: false,
+      message:"Property doesnt Exist on file"
+    }}
+    if (frontmatter[this.propertyName] !== this.propertyValue) {
+      devlog.test("Property doesnt match", {filesProperty:frontmatter, expectedValue: this.propertyValue})
+      return {
+      success: false,
+      message:"Property Value doesnt Match"
+    }}
+    return {
+      success: true,
+      type:"ruleMatch"
+    }
   }
   getDesc() {
     return `File ${this.propertyName} has value ${this.propertyValue}`

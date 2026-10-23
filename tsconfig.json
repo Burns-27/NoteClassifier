@@ -11,9 +11,11 @@
 		"moduleResolution": "bundler",
 		"isolatedModules": true,
 		"skipLibCheck": true,
+		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
 		"allowSyntheticDefaultImports": true,
-		"lib": ["ES2021", "DOM"]
+		"lib": ["ES2021", "DOM"],
+		"types":["node", "jest"]
 	},
 	"include": ["src/**/*.ts"]
 }
