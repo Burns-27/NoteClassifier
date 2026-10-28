@@ -1,8 +1,9 @@
 import { CachedMetadata, TFile } from "obsidian"
 import { TCls } from "../../types/classifications.types"
-import { ActionResult } from "../../types/responses.types"
 import { midFile } from "../../types/files.types"
 import { MockCls } from "./cls.mock.factory"
+import { ClsRes } from "../../types/responses.types"
+import { mock } from "node:test"
 
 
 
@@ -11,7 +12,8 @@ type MockFileArgs = {
   path:string,
   cls: MockCls,
   tags: string[],
-  properties: Record<string,unknown>
+  properties: Record<string, unknown>,
+  expectedPath:string,
 }
 
 export class MockFile {
@@ -22,7 +24,8 @@ export class MockFile {
   metadataCache: CachedMetadata
   tags: string[]
   cls: TCls
-  mockMatchRes: ActionResult
+  mockCls: MockCls
+  mockMatchRes: ClsRes
   midfile: midFile
   constructor(moc:MockFileArgs) {
     this.file = {
@@ -32,6 +35,7 @@ export class MockFile {
       path:moc.path
     } as unknown as TFile
     this.cls = moc.cls.cls
+    this.mockCls = moc.cls
     this.expectedClsName = moc.cls.cls.name
     this.metadataCache = {
         frontmatter:moc.properties
@@ -39,7 +43,6 @@ export class MockFile {
     this.tags = moc.tags
     this.mockMatchRes = {
       success: true,
-      type: "cls match",
       cls: moc.cls.cls
     }
     this.midfile = {
@@ -47,7 +50,7 @@ export class MockFile {
       metadataCache: this.metadataCache,
       tags:moc.tags
     }
-    this.expectedPath = moc.cls.expectedPath.join('/')
+    this.expectedPath = moc.expectedPath
     this.expectedProperties = moc.cls.expectedProps
   }
 }

@@ -1,7 +1,7 @@
 
 import { devlog } from "../logger"
 import { midFile } from "../types/files.types"
-import { ActionResult } from "../types/responses.types"
+import {  RuleMatchRes } from "../types/responses.types"
 import { Rule } from "../types/rules.types"
 
 
@@ -43,7 +43,7 @@ class ExactPropertyRule implements PropertyRule {
     this.id = data.id
     this.desc = `File Has '${this.propertyName}' Property with '${this.propertyValue}' as its value`
   }
-  match(file: midFile): ActionResult{
+  match(file: midFile): RuleMatchRes{
     const frontmatter = file.metadataCache.frontmatter
     if (!frontmatter) {
       devlog.test("No frontmatter found")
@@ -65,7 +65,6 @@ class ExactPropertyRule implements PropertyRule {
     }}
     return {
       success: true,
-      type:"ruleMatch"
     }
   }
   getDesc() {

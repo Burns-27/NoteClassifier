@@ -1,6 +1,6 @@
 import { Classification } from "../../classification/Classification"
-import { FlatCls, TCls } from "../../types/classifications.types"
-import { ActionResult } from "../../types/responses.types"
+import type { FlatCls, TCls } from "../../types/classifications.types"
+import type {  ClsPathRes, ClsPropsRes, ClsRes } from "../../types/responses.types"
 
 export type MockClsArg = {
   flatCls: FlatCls,
@@ -16,9 +16,9 @@ export class MockCls {
   cls: TCls
   expectedPath: string[]
   expectedProps: string[]
-  mocPathRes: ActionResult
-  mocPropsRes: ActionResult
-  mocParentRes: ActionResult
+  mocPathRes: ClsPathRes
+  mocPropsRes: ClsPropsRes
+  mocParentRes: ClsRes
   constructor(moc: MockClsArg) {
     this.level = moc.level
     this.flatCls = moc.flatCls
@@ -26,25 +26,21 @@ export class MockCls {
     this.expectedPath = moc.expectedPath
       this.mocPathRes = {
         success: true,
-        type: "ClsPath",
         path:moc.expectedPath
       }
     this.expectedProps = moc.expectedProps
     this.mocPropsRes = {
       success: true,
-      type: "ClsProps",
       props:moc.expectedProps
     }
     if (moc.parent) {
       this.mocParentRes = {
         success: true,
-        type: "Cls Get",
         cls: moc.parent.cls
       }
     } else {
       this.mocParentRes = {
         success: false,
-        message:"No Parent ID"
       }
     }
   }

@@ -3,9 +3,9 @@ import { FlatCls, TCls } from "../types/classifications.types";
 import { TRule } from "../types/rules.types";
 import { RuleFactory } from "../Rules/RuleFactory";
 import { midFile } from "../types/files.types";
-import { ActionResult } from "../types/responses.types";
 import { settingUtil } from "../settings/settingsUtil";
 import { devlog } from "../logger";
+import { ClsPathRes, ClsPropsRes, ClsRes } from "../types/responses.types";
 
 export class Classification implements TCls{
   readonly id: string;
@@ -22,16 +22,14 @@ export class Classification implements TCls{
     this.destination = data.destination;
     this.rules = RuleFactory(data.rules)
   }
-  match(file: midFile): ActionResult{
+  match(file: midFile): ClsRes{
     for (const rule of this.rules) {
       const check = rule.match(file)
       if(!check.success) return check
     }
     return {
       success: true,
-      type: "cls match",
       cls:this
-      
     }
   }
 
@@ -42,7 +40,7 @@ export class Classification implements TCls{
     this.rules.forEach((rule) => { desc.push(rule.getDesc()) })
     return desc.join("/n - ")
   }
-  getPath(): ActionResult {
+  getPath(): ClsPathRes{
     devlog.loc("Class Get Path","", {cls: this} )
     const clsDest = this.destination.split('/')
     devlog.test("Original Destination Array", clsDest)
@@ -50,11 +48,11 @@ export class Classification implements TCls{
     if (clsDest[0] == "*") {
       const parentClsRes = this.getParent()
       devlog.test("Parent Class Result", parentClsRes)
-      if (parentClsRes.success && (parentClsRes.type == "Cls Get")) {
+      if (parentClsRes.success) {
         const parentCls = parentClsRes.cls
         const parentClsPath = parentCls.getPath()
         devlog.test("Parent Path Result", parentClsPath)
-        if (parentClsPath.success && parentClsPath.type == "ClsPath") {
+        if (parentClsPath.success) {
           destinationArray.push(...parentClsPath.path)
         } else {
           devlog.fallback("Parent Path", {parentCls: parentCls, pathResult: parentClsPath})
@@ -65,30 +63,29 @@ export class Classification implements TCls{
       clsDest.shift()
     }
     destinationArray.push(...clsDest)
+    devlog.test("Destination Array Final", destinationArray)
     return {
       success: true,
-      type: "ClsPath",
       path: destinationArray
     }
   }
-  getProps(): ActionResult{
+  getProps(): ClsPropsRes{
     let props = [...this.requriedProperties]
     if (this.parentID) {
       const parentClsRes = this.getParent()
-      if (parentClsRes.success && parentClsRes.type == "Cls Get") {
+      if (parentClsRes.success) {
         const parentClsPropsRes = parentClsRes.cls.getProps()
-        if (parentClsPropsRes.success && parentClsPropsRes.type == "ClsProps") {
+        if (parentClsPropsRes.success) {
           props.push(...parentClsPropsRes.props)
         }
       }
     }
     return {
       success: true, 
-      type: "ClsProps", 
       props: [...new Set(props)]
     }
   }
- getParent(): ActionResult{
+ getParent(): ClsRes{
     if (this.parentID) {
       const parentClsRes = settingUtil.getCls(this.parentID)
        return parentClsRes
@@ -107,7 +104,7 @@ export class NodeClass {
   constructor(classification: TCls) {
     this.classification = classification
   }
-  search(file:midFile): ActionResult{
+  search(file:midFile): ClsRes{
     const res = this.classification.match(file)
     if (!res.success) return res
     if (this.children.length == 0) {

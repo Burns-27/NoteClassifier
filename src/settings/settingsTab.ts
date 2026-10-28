@@ -4,6 +4,7 @@ import { NodeClass } from '../classification/Classification';
 import { settingUtil } from './settingsUtil';
 import { FlatCls, TCls } from '../types/classifications.types';
 import { ClsModal } from './ClsModal';
+import { logger } from '../logger';
 
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
@@ -96,25 +97,14 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				}
 			]
 		}
-		if (!(flatRuleRes.type === "flat CLs Get")) {
-			return {
-				type: "page",
-				name: "Error",
-				items: [
-					{
-						name: "Classification Not found",
-						desc:"This Classification was not found, please reload app, or plugin"
-					}
-				]
-			}
-		}
+		
 		const flatRule = flatRuleRes.cls
 		//console.debug("Node for Page",rule)
 		const cls = rule.classification
 		//const children = rule.children
 		return {
 			type: "page",
-			id:`${flatRule.id}.${index}`,
+			//id:`${flatRule.id}.${index}`,
 			name: `Classification: ${flatRule.name}`,
 			items: [
 				{
@@ -150,7 +140,13 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		}).open()
 	}
 	newClsModal(parentID?:string) {
-		const { flatCls, cls } = settingUtil.newCls(parentID)
+		const res = settingUtil.newCls(parentID)
+								if (!res.success) {
+									logger.err("Unable to update cls. ", res)
+									this.update()
+									return
+								}
+								const { cls, flatCls } = res
 		this.openClsModal(cls, flatCls)
 	}
 }

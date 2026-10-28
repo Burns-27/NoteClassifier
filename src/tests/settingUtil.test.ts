@@ -87,7 +87,7 @@ describe('Settings Unit Tests', () => {
 			const getFlatClsRes = settingUtil.getFlatCls("1")
 			expect(getFlatClsRes.success).toBe(true)
 			expect(settingUtil.get().rules).toHaveLength(1)
-			if (getFlatClsRes.success && getFlatClsRes.type == "flat CLs Get") {
+			if (getFlatClsRes.success) {
 				expect(getFlatClsRes.cls.name).toBe("New Media")
 			}
 				
@@ -97,7 +97,7 @@ describe('Settings Unit Tests', () => {
 			settingUtil.updateCls(updatedcls)
 			const getClsRes = settingUtil.getCls("1")
 			expect(getClsRes.success).toBe(true)
-			if (getClsRes.success && getClsRes.type == "Cls Get") {
+			if (getClsRes.success) {
 				expect(getClsRes.cls.name).toBe("New Media")
 			}
 		});
@@ -142,7 +142,7 @@ describe('Settings Unit Tests', () => {
 		
 		});
 		test('Returns Only root node when there are children', () => {
-			settingUtil.updateAll({ rules: [TestCls.notes.flatCls, TestCls.project.flatCls] })
+			settingUtil.updateAll({ rules: [TestCls.projectNotes.flatCls, TestCls.project.flatCls] })
 			const nodes = settingUtil.rootNodes()
 			expect(nodes).toHaveLength(1)
 			if (nodes[0]) {

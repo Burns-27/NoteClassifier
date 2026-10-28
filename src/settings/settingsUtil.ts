@@ -1,8 +1,8 @@
 import { Classification, NodeClass } from "../classification/Classification";
 import { FlatCls, TCls } from "../types/classifications.types";
-import { midFile } from "../types/files.types";
-import { ActionResult } from "../types/responses.types";
-import { DEFAULT_SETTINGS, NoteClassifierSettings } from "../types/settings.types";
+import type { midFile } from "../types/files.types";
+import type {  ClsRes, FlatClsRes, UpdateClsRes } from "../types/responses.types";
+import { DEFAULT_SETTINGS, NoteClassifierSettings, SettingUtil } from "../types/settings.types";
 
 let settings: NoteClassifierSettings = { ...DEFAULT_SETTINGS }
 let nodeMap:Map<string, NodeClass>= new Map()
@@ -41,7 +41,7 @@ function buildNodeTree() {
       parentNode.children.push(node)
   })
 }
-function getCls(id: string): ActionResult{
+function getCls(id: string): ClsRes{
   const cls = clsMap.get(id)
   if (!cls) {
     return {
@@ -51,11 +51,10 @@ function getCls(id: string): ActionResult{
   }
   return {
     success: true,
-    type: "Cls Get",
     cls: cls
   }
 }
-function matchCls(file: midFile): ActionResult{
+function matchCls(file: midFile): ClsRes{
   const cls = nodeTree.find((node) => node.search(file))
   if (!cls) {
     return {
@@ -68,11 +67,10 @@ function matchCls(file: midFile): ActionResult{
   }
   return {
     success: true,
-    type: "cls match",
     cls : cls.classification
   }
 }
-function getFlatCls(id: string): ActionResult{
+function getFlatCls(id: string): FlatClsRes{
   const cls = settings.rules.find((flat) => flat.id === id)
   if (!cls) {
     return {
@@ -82,7 +80,6 @@ function getFlatCls(id: string): ActionResult{
   }
   return {
     success: true,
-    type: "flat CLs Get",
     cls:cls
   }
 }
@@ -94,7 +91,7 @@ function updateAllSettings(newSettings: Partial<NoteClassifierSettings>) {
   buildClsMap()
   buildNodeTree()
 }
-function updateCls(newCls: FlatCls):{cls:TCls, flatCls: FlatCls} {
+function updateCls(newCls: FlatCls):UpdateClsRes {
   settings.rules = settings.rules.filter((cls) => cls.id !== newCls.id)
   settings.rules.push(newCls)
   //console.debug(newCls, "New Flat Class")
@@ -102,9 +99,9 @@ function updateCls(newCls: FlatCls):{cls:TCls, flatCls: FlatCls} {
   const cls = new Classification(newCls)
   clsMap.set(newCls.id, cls)
   buildNodeTree()
-  return {cls:cls, flatCls:newCls}
+  return {success: true, cls:cls, flatCls:newCls}
 }
-function newCls(parentID?: string): { flatCls: FlatCls, cls: TCls }{
+function newCls(parentID?: string): UpdateClsRes{
   const parIdCheck = parentID ? { parentID: parentID } : {}
   const id = `${nextID()}`
   const basicCls: FlatCls = {
@@ -120,14 +117,14 @@ function newCls(parentID?: string): { flatCls: FlatCls, cls: TCls }{
   const cls = new Classification(basicCls)
   clsMap.set(basicCls.id, cls)
   buildNodeTree()
-  return {flatCls:basicCls, cls:cls}
+  return {success:true, flatCls:basicCls, cls:cls}
 }
 function nextID(): string{
   const next = settings.nextID.toString()
   settings.nextID++
   return `${next}`
 }
-export const settingUtil = {
+export const settingUtil:SettingUtil = {
   get: getSettings,
   getCls: getCls,
   getFlatCls: getFlatCls,

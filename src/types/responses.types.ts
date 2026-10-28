@@ -1,49 +1,51 @@
 import { FlatCls, TCls } from "./classifications.types"
 import { TClsFile } from "./files.types"
-export type ActionResult = FailRes | SuccessRes
 
-type FailRes = {
+export type FailRes = {
   success: false,
   message?: string,
   context?:Record<string,unknown>
 }
+export type updateRes = {
+  success:true,
+  moved: boolean, 
+  flagged:boolean,
+}| FailRes
 
-type SuccessRes = ClsRes|FlatClsRes|ClsMatchRes|NoteClsRes|ClsPathRes|ClsPropsRes|RuleMatchRes
-
-type ClsRes = {
-  success:true, 
-  type: "Cls Get"
+export type ClsRes = {
+  success: true, 
   cls: TCls 
-}
+} | FailRes
 
-type FlatClsRes = {
+export type FlatClsRes = {
   success: true,
-  type: "flat CLs Get",
   cls: FlatCls
-}
-type ClsMatchRes = {
+}|FailRes
+
+export type NoteClsRes = {
   success: true,
-  type: "cls match",
-  cls:TCls
-}
-type NoteClsRes = {
-  success: true,
-  type: "note cls",
   note: TClsFile
-}
+}|FailRes
 
-type ClsPathRes = {
+export type ClsPathRes = {
   success: true,
-  type: "ClsPath",
   path:string[], 
-}
-type ClsPropsRes = {
+}|FailRes
+export type ClsPropsRes = {
   success: true,
-  type: "ClsProps",
   props:string[]
-}
+}|FailRes
 
-type RuleMatchRes = {
+export type RuleMatchRes = {
   success: true,
-  type:"ruleMatch"
-}
+} | FailRes
+
+
+
+export type UpdateClsRes = {
+  success: true,
+  cls: TCls,
+  flatCls:FlatCls,
+} | FailRes
+
+

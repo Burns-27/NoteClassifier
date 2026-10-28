@@ -1,4 +1,5 @@
 
+import { FlatCls } from '../../types/classifications.types';
 import { MockCls, MockClsArg } from './cls.mock.factory';
 
 const mediaMoc: MockClsArg = {
@@ -40,7 +41,7 @@ const project: MockCls = new MockCls(test2Flat);
 const test3Flat: MockClsArg = {
 	flatCls: {
 		id: '5',
-		name: 'Test 3',
+		name: 'project Notes',
 		parentID: '3',
 		destination: '*/notes',
 		requriedProperties: [],
@@ -53,10 +54,52 @@ const test3Flat: MockClsArg = {
 	
 };
 const projectNotes: MockCls = new MockCls(test3Flat)
+const flatNotes: MockClsArg = {
+	flatCls: {
+		id: '7',
+		name: 'General Notes',
+		destination: "[subject]/Notes",
+		requriedProperties: ['subject'],
+		rules: [{ id: '6', type: 'tag', matchType: 'include', tag: 'notes' }],
+	},
+	level: 'Root',
+	expectedPath: ['[subject]', 'notes'],
+	expectedProps: ['subject'],
+}
+const generalNotes:MockCls = new MockCls(flatNotes)
 
-export const MockClsArray: MockCls[] = [mediaCls, project, projectNotes];
+const articleGuideMoc: MockClsArg = {
+	flatCls: {
+		id: '9',
+		parentID:'1',
+		name: "Guide - Article",
+		destination: '*/Article/Guides',
+		requriedProperties: ['subject', 'URL'],
+		rules: [{
+			id: '10',
+			type: 'property',
+			matchType:'exact',
+			propertyName: 'mediaType',
+			propertyValue: 'article',
+		},
+			{
+				id: '11',
+				type: 'tag',
+				matchType: 'include',
+				tag:'guide'
+		}]
+	},
+	level: 'Child',
+	expectedPath: ['Media', 'Article', 'Guides'],
+	expectedProps: ['subject', 'URL'],
+	parent:mediaCls
+}
+const articleGuide = new MockCls(articleGuideMoc)
+export const MockClsArray: FlatCls[] = [mediaCls.flatCls, project.flatCls, projectNotes.flatCls,generalNotes.flatCls,articleGuide.flatCls];
 export const TestCls = {
 	media: mediaCls,
 	project: project,
-	notes: projectNotes,
+	projectNotes: projectNotes,
+	generalNotes: generalNotes,
+	articleGuide:articleGuide,
 };

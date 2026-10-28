@@ -1,3 +1,4 @@
+import { Notice } from "obsidian";
 import { settingUtil } from "./settings/settingsUtil";
 
 
@@ -22,4 +23,23 @@ export const devlog = {
   loc: location,
   fallback: fallbackError,
   test: test, 
+}
+function errorNotice(thing: string, ...args: unknown[]) {
+  if (settingUtil.get().ErrorNotice) {
+    new Notice(thing)
+  }
+  debug(thing, args)
+}
+
+function summaryNotice(moved: number, flagged: number) {
+  if (settingUtil.get().SummaryNotice) {
+    new Notice(`${moved} Files moved, and ${flagged} files flagged for review`)
+  }
+  debug({FilesMoved:moved, filesFlagged:flagged})
+}
+
+export const logger = {
+  err: errorNotice,
+  sum: summaryNotice,
+  debug:debug
 }
