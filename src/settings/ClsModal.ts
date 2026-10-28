@@ -4,6 +4,7 @@ import { settingUtil } from './settingsUtil';
 import { FlatCls, TCls } from '../types/classifications.types';
 import { FlatRule, TRule } from '../types/rules.types';
 import { RuleModal } from './rulesModal';
+import { logger } from '../logger';
 
 export class ClsModal extends Modal {
 	flatCls!: FlatCls;
@@ -105,9 +106,13 @@ export class ClsModal extends Modal {
 						//console.debug("Rules Post filter", newRules)
 						this.flatCls.rules = newRules;
 						//console.debug("Flat class sent to update", this.flatCls)
-						const { cls, flatCls } = settingUtil.updateCls(
-							this.flatCls,
-						);
+						const res = settingUtil.updateCls(this.flatCls)
+						if (!res.success) {
+							logger.err("Unable to update cls. ", res)
+							this.display()
+							return
+						}
+						const { cls, flatCls } = res
 						this.flatCls = { ...flatCls };
 						this.cls = cls;
 						this.display();
@@ -127,7 +132,13 @@ export class ClsModal extends Modal {
 		const copyRule = { ...flatRule };
 		new RuleModal(this.ncp, copyRule, (newRule: FlatRule) => {
 			flatRule = newRule;
-			const { cls, flatCls } = settingUtil.updateCls(this.flatCls);
+			const res = settingUtil.updateCls(this.flatCls)
+						if (!res.success) {
+							logger.err("Unable to update cls. ", res)
+							this.display()
+							return
+						}
+						const { cls, flatCls } = res
 			this.flatCls = { ...flatCls };
 			this.cls = cls;
 			this.display();
@@ -142,7 +153,13 @@ export class ClsModal extends Modal {
 		};
 		new RuleModal(this.ncp, rule, (newRule: FlatRule) => {
 			this.flatCls.rules.push(newRule);
-			const { cls, flatCls } = settingUtil.updateCls(this.flatCls);
+			const res = settingUtil.updateCls(this.flatCls)
+						if (!res.success) {
+							logger.err("Unable to update cls. ", res)
+							this.display()
+							return
+						}
+						const { cls, flatCls } = res
 			this.flatCls = { ...flatCls };
 			this.cls = cls;
 			this.display();

@@ -1,4 +1,5 @@
-import { midFile, TClsFile } from "./files.types";
+import type { midFile } from "./files.types";
+import type { ClsPathRes, ClsPropsRes, ClsRes } from "./responses.types";
 import { FlatRule, TRule } from "./rules.types";
 
 export interface TCls {
@@ -6,9 +7,10 @@ export interface TCls {
   readonly parentID?: string | null;
   readonly name: string;
   rules: TRule[], 
-  getPath: (file: TClsFile) => string,
-  match: (file: midFile) => boolean,
-  getDesc: (cont:HTMLElement)=>void,
+  getPath: () => ClsPathRes,
+  match: (file: midFile) => ClsRes,
+  getDesc: (cont: HTMLElement) => void,
+  getProps:()=>ClsPropsRes, 
 }
 
 export type FlatCls = {

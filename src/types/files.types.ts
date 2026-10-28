@@ -1,20 +1,20 @@
 import { CachedMetadata, FrontMatterCache, TFile } from "obsidian";
+import { updateRes } from "./responses.types";
 
 export interface TClsFile {
   readonly TFile: TFile, 
-  name: string,
   readonly startPath:string, 
+  name: string,
   frontmatter?: FrontMatterCache
   tags?: Array<string>,
   classification: string,
-  /*
-  validateProperties: () => ActionResult,
-  addMissingProperties:()=> ActionResult,
-  move: () => ActionResult, 
-  */
+  destination: string,
+  reportFlags: ReportFlags[]
+  update:()=>updateRes , 
 }
 export type midFile = {
   TFile: TFile,
   metadataCache: CachedMetadata,
   tags:Array<string>|null
 }
+export type ReportFlags = "Missing Properties for path"|"Missing Required Properties"

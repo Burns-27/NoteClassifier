@@ -1,5 +1,7 @@
 
+import { devlog } from "../logger"
 import { midFile } from "../types/files.types"
+import { FailRes, RuleMatchRes } from "../types/responses.types"
 import { Rule } from "../types/rules.types"
 
 
@@ -42,11 +44,24 @@ class ExactTagRule implements TagRule{
     this.desc = `File has ${data.tag}, exactly`
   }
 
-  match(file: midFile): boolean{
-    if (!file.tags || file.tags.length == 0) return false
+  match(file: midFile): RuleMatchRes{
+    if (!file.tags || file.tags.length == 0) {
+      const res: FailRes = {
+        success: false,
+        message:"File Has no tags"
+      }
+      devlog.test("Tag Exact Match Fail", res)
+      return res
+      }
     const check = file.tags.find((t) => t == this.tag) 
-    if (!check) return false
-    return true
+    if (!check) {
+      const res:FailRes = { success: false, message: "File doesnt have matching tag", context: { fileTags: file.tags, expectedTag: this.tag } }
+      devlog.test("Tag Exact Match Fail", res)
+      return res
+    }
+    return {
+      success: true,
+    }
   }
   getDesc(): string{
     return `File has #${this.tag}`
@@ -64,15 +79,36 @@ class IncludeTagRule implements TagRule {
     this.id = data.id
     this.desc = `File Includes ${data.tag}`
   }
-  match(file: midFile): boolean{
-    if (!file.tags || file.tags.length == 0) return false
+  match(file: midFile): RuleMatchRes{
+    if (!file.tags || file.tags.length == 0) {
+      const res: FailRes = {
+        success: false,
+        message:"File has No Tags"
+      }
+      devlog.test("Tag Include Match Fail", res)
+      return res
+    }
     const splitTags: string[] = []
     for (const tag of file.tags) {
       splitTags.push(...tag.split('/'))
     }
     const check = splitTags.find((t) => t == this.tag)
-    if (!check) return false
-    return true
+    if (!check) {
+      const res: FailRes = {
+        success: false,
+        message: "No matching tags",
+        context: {
+          fileTags: file.tags,
+          splitTags: splitTags,
+          goalTag:this.tag,
+        }
+      }
+      devlog.test("No matching tag", res)
+      return res
+    }
+    return {
+      success: true,
+    }
   }
   getDesc() {
     return `File tags includes '${this.tag}'`
