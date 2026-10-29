@@ -1,7 +1,9 @@
 import { Classification, NodeClass } from "../classification/Classification";
+import { logger } from "../logger";
 import { FlatCls, TCls } from "../types/classifications.types";
 import type { midFile } from "../types/files.types";
-import type {  ClsRes, FlatClsRes, UpdateClsRes } from "../types/responses.types";
+import type {  ClsRes,  UpdateClsRes } from "../types/responses.types";
+import { FlatRule } from "../types/rules.types";
 import { DEFAULT_SETTINGS, NoteClassifierSettings, SettingUtil } from "../types/settings.types";
 
 let settings: NoteClassifierSettings = { ...DEFAULT_SETTINGS }
@@ -19,8 +21,8 @@ const getRootNodes = (): Array<NodeClass> => {
 }
 function buildClsMap(){
   const flatClsArray = settings.rules
-  flatClsArray.forEach((cls) => {
-    clsMap.set(cls.id, new Classification(cls))
+  flatClsArray.forEach((cls, key) => {
+    clsMap.set(key, new Classification(cls))
   })
 }
 
@@ -70,21 +72,10 @@ function matchCls(file: midFile): ClsRes{
     cls : cls.classification
   }
 }
-function getFlatCls(id: string): FlatClsRes{
-  const cls = settings.rules.find((flat) => flat.id === id)
-  if (!cls) {
-    return {
-      success: false,
-      message:"Failed to retrieve Flat Classification"
-    }
-  }
-  return {
-    success: true,
-    cls:cls
-  }
-}
+
 function updateMainSettings(newSettings:Partial<NoteClassifierSettings>) {
-  settings = {...settings, ...newSettings}
+  settings = { ...settings, ...newSettings }
+  logger.debug("Updated Main Settings", )
 }
 function updateAllSettings(newSettings: Partial<NoteClassifierSettings>) {
   settings = { ...settings, ...newSettings }
@@ -92,14 +83,11 @@ function updateAllSettings(newSettings: Partial<NoteClassifierSettings>) {
   buildNodeTree()
 }
 function updateCls(newCls: FlatCls):UpdateClsRes {
-  settings.rules = settings.rules.filter((cls) => cls.id !== newCls.id)
-  settings.rules.push(newCls)
-  //console.debug(newCls, "New Flat Class")
-  //console.debug("The full settings Item", settings)
+  settings.rules.set(newCls.id, newCls)
   const cls = new Classification(newCls)
   clsMap.set(newCls.id, cls)
   buildNodeTree()
-  return {success: true, cls:cls, flatCls:newCls}
+  return {success: true, cls:cls}
 }
 function newCls(parentID?: string): UpdateClsRes{
   const parIdCheck = parentID ? { parentID: parentID } : {}
@@ -108,16 +96,16 @@ function newCls(parentID?: string): UpdateClsRes{
     id: id,
     ...parIdCheck,
     name: "New Classification",
-    rules: [],
+    rules: new Map<string, FlatRule>(),
     destination: "Set Destination",
     requriedProperties:[]
   } 
   
-  settings.rules.push(basicCls)
+  settings.rules.set(id, basicCls)
   const cls = new Classification(basicCls)
   clsMap.set(basicCls.id, cls)
   buildNodeTree()
-  return {success:true, flatCls:basicCls, cls:cls}
+  return {success:true, cls:cls}
 }
 function nextID(): string{
   const next = settings.nextID.toString()
@@ -127,7 +115,6 @@ function nextID(): string{
 export const settingUtil:SettingUtil = {
   get: getSettings,
   getCls: getCls,
-  getFlatCls: getFlatCls,
   updateMain: updateMainSettings,
   updateAll: updateAllSettings,
   matchCls: matchCls,

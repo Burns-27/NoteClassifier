@@ -10,4 +10,5 @@ export interface Rule {
   getDesc: () => string,
   match: (file: midFile) => RuleMatchRes
   id: string,
+  flat:FlatRule,
 }

@@ -37,11 +37,11 @@ class ExactTagRule implements TagRule{
   readonly matchType = "exact";
   tag: string
   id: string
-  readonly desc: string
+  flat:FlatExactTagRule
   constructor(data: FlatExactTagRule) {
     this.tag = data.tag
     this.id = data.id
-    this.desc = `File has ${data.tag}, exactly`
+    this.flat = data
   }
 
   match(file: midFile): RuleMatchRes{
@@ -64,7 +64,7 @@ class ExactTagRule implements TagRule{
     }
   }
   getDesc(): string{
-    return `File has #${this.tag}`
+    return ` has #${this.tag}`
   }
 }
 
@@ -73,11 +73,11 @@ class IncludeTagRule implements TagRule {
   readonly matchType = "includes";
   tag: string
   id: string
-  readonly desc:string
+  flat:FlatIncludeTagRule
   constructor(data: FlatIncludeTagRule) {
     this.tag = data.tag
     this.id = data.id
-    this.desc = `File Includes ${data.tag}`
+    this.flat = data
   }
   match(file: midFile): RuleMatchRes{
     if (!file.tags || file.tags.length == 0) {
@@ -111,6 +111,6 @@ class IncludeTagRule implements TagRule {
     }
   }
   getDesc() {
-    return `File tags includes '${this.tag}'`
+    return `includes '#${this.tag}'`
   }
 }

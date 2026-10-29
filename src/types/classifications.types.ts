@@ -6,18 +6,20 @@ export interface TCls {
   readonly id: string;
   readonly parentID?: string | null;
   readonly name: string;
-  rules: TRule[], 
+  rules: Map<string, TRule>, 
   getPath: () => ClsPathRes,
   match: (file: midFile) => ClsRes,
   getDesc: (cont: HTMLElement) => void,
-  getProps:()=>ClsPropsRes, 
+  getProps: () => ClsPropsRes, 
+  flat:FlatCls
 }
 
 export type FlatCls = {
   id: string;
   parentID?: string | null;
   name: string
-  rules: FlatRule[],
+  rules: Map<string, FlatRule>,
   destination: string,
+  description?:string,
   requriedProperties:string[],
 }

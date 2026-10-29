@@ -1,12 +1,11 @@
 import { NodeClass } from "../classification/Classification";
 import type { FlatCls } from "./classifications.types";
 import type { midFile } from "./files.types";
-import type { ClsRes, FlatClsRes, UpdateClsRes } from "./responses.types";
+import type { ClsRes, UpdateClsRes } from "./responses.types";
 
 export interface NoteClassifierSettings {
-  rules: Array<FlatCls>;
+  rules: Map<string, FlatCls>;
     nextID: number;
-    createReports: boolean;
     ErrorNotice: boolean
   SummaryNotice: boolean
   NoticeProperty: string;
@@ -16,9 +15,8 @@ export interface NoteClassifierSettings {
 }
 
 export const DEFAULT_SETTINGS: NoteClassifierSettings = {
-  rules: [],
+  rules: new Map<string, FlatCls>,
   nextID: 1,
-  createReports:false,
   ErrorNotice: true,
   SummaryNotice: true,
   NoticeProperty: "NC_Notice",
@@ -30,7 +28,6 @@ export const DEFAULT_SETTINGS: NoteClassifierSettings = {
 export interface SettingUtil {
   get: () => NoteClassifierSettings,
   getCls: (id:string) => ClsRes,
-  getFlatCls: (id:string) => FlatClsRes,
   updateMain: (newSettings:Partial<NoteClassifierSettings>) => void,
   updateAll: (newSettings:Partial<NoteClassifierSettings>) => void,
   updateCls: (flat:FlatCls) => UpdateClsRes,

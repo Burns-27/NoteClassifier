@@ -12,10 +12,6 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
-	async setControlValue(key: string, value: unknown):  Promise<void> {
-		settingUtil.updateMain({ [key]: value })
-		await this.plugin.saveSettings()
-	}
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		const rootNodes = [...settingUtil.rootNodes()]
 		console.debug("root nodes", rootNodes)
@@ -25,38 +21,11 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				desc:"Enable Debug logs in the developer tools",
 				control:{type:"toggle", key:"debug"}
 			},
-			{
-				name: "Prompt on save",
-				desc: "Prompt to run a Update All command when saving changes to a classification",
-				control:{type:"toggle",key:"promptOnSave"}
-		},
-			{
-				heading: "Reports",
-				type: "group",
-				items: [
 					{
 						name: "Create Reports",
-						desc:"Create a .md file when running a command to get the matching report. See doc's for details. ",
-						control: { type: "toggle", key: "createReports" },
+						desc:"Create a .bases file with views that filters based on notices. See docs for details.  ",
+						action:()=>{logger.debug('Create Report button Clicked')},
 					},
-					{
-						name: "Auto Open Reports",
-						desc:"Automatically open reports in a new tab after a command is run",
-						control: { type: "toggle", key: "autoOpenReports" },
-						visible:()=>this.plugin.settings.createReports
-					},
-					{
-						name: "Report Location",
-						desc: `Where the reports will be saved. See docs for info`,
-						visible:()=>this.plugin.settings.createReports,
-						control: {
-							type: "dropdown",
-							key: "reportLocation",
-							options: {folder:"Specific Folder", root:"Vault Root", dynamic:"Command Location"}
-						}
-					}
-				]
-			},
 			{
 				heading: "Notificaitons",
 				type: "group",
@@ -74,6 +43,9 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				]
 			},
 			{
+				type: "page",
+				name: "Main Classifications",
+				items:[{
 				heading: 'Classes',
 				type: "list",
 				addItem: {
@@ -81,31 +53,20 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 					action: ()=>this.newClsModal()
 				},
 				items: rootNodes.map((rule, index) => this.getRulePage(rule, index))
-			}
+			}]
+			},
+			
 		]
 	}
 	
 	getRulePage(rule: NodeClass, index: number): SettingGroupItem {
-		const flatRuleRes = settingUtil.getFlatCls(rule.classification.id)
-		if (!flatRuleRes.success) return {
-			type: "page",
-			name: "Error",
-			items: [
-				{
-					name: "Classification Not found",
-					desc:"This Classification was not found, please reload app, or plugin"
-				}
-			]
-		}
-		
-		const flatRule = flatRuleRes.cls
-		//console.debug("Node for Page",rule)
 		const cls = rule.classification
-		//const children = rule.children
+		const flatcls = cls.flat
 		return {
 			type: "page",
 			//id:`${flatRule.id}.${index}`,
-			name: `Classification: ${flatRule.name}`,
+			name: `${flatcls.name}`,
+			desc:`${flatcls.description??""}`,
 			items: [
 				{
 					name: "Description",
@@ -115,8 +76,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						setting.addExtraButton((button) => {
 							button.setIcon("pencil")
 							button.onClick(() => {
-								//console.debug("Edit CLs button clicked")
-								this.openClsModal(cls, flatRule)
+								this.openClsModal(cls)
 							})
 						})
 					})
@@ -124,29 +84,22 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				{
 					heading: "Child Classifications",
 					type: "list",
-					addItem: { name: "Add Child Classificaiton", action: () => this.newClsModal(flatRule.id) },
+					addItem: { name: "Add Child Classificaiton", action: () => this.newClsModal(flatcls.id) },
 					items: rule.children.map((child, index)=>this.getRulePage(child,index ))
 				}
 			]
 		}
 	}
-	openClsModal(cls: TCls, flatCls: FlatCls) {
-		//console.debug("open cls modal ran")
-		new ClsModal(this.plugin, flatCls, cls,  (newCls: FlatCls) => {
+	openClsModal(cls: TCls) {
+		new ClsModal(this.plugin, cls,  (newCls: FlatCls) => {
 			const updateResults = settingUtil.updateCls(newCls)
-			console.debug("Cls Modal closed, cls updated", updateResults)
+			logger.debug("Cls Modal closed, cls updated", updateResults)
 			void this.plugin.saveSettings()
 			this.update()
 		}).open()
 	}
 	newClsModal(parentID?:string) {
 		const res = settingUtil.newCls(parentID)
-								if (!res.success) {
-									logger.err("Unable to update cls. ", res)
-									this.update()
-									return
-								}
-								const { cls, flatCls } = res
-		this.openClsModal(cls, flatCls)
+		this.openClsModal(res.cls)
 	}
 }

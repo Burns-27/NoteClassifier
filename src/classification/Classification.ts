@@ -11,11 +11,13 @@ export class Classification implements TCls{
   readonly id: string;
   readonly parentID?: string| null;
   readonly name: string;
-  rules: TRule[];
+  rules: Map<string, TRule>;
+  flat: FlatCls
   private destination: string
   requriedProperties: string[];
   constructor(data: FlatCls) {
     this.id = data.id
+    this.flat = data
     this.parentID = data.parentID
     this.name = data.name
     this.requriedProperties = data.requriedProperties
@@ -23,13 +25,22 @@ export class Classification implements TCls{
     this.rules = RuleFactory(data.rules)
   }
   match(file: midFile): ClsRes{
-    for (const rule of this.rules) {
+    let match:boolean = true
+    this.rules.forEach((rule) => {
       const check = rule.match(file)
-      if(!check.success) return check
-    }
-    return {
-      success: true,
-      cls:this
+      if (!check.success) {
+        match = false
+      }
+    })
+    if (match) {
+      return {
+        success: true,
+        cls:this
+      }
+    } else {
+      return {
+        success:false,
+      }
     }
   }
 

@@ -36,11 +36,13 @@ class ExactPropertyRule implements PropertyRule {
   readonly matchType = "exact"
   readonly propertyValue: string
   id: string
+  flat: FlatExactPropertyRule;
   readonly desc: string
   constructor(data: FlatExactPropertyRule) {
     this.propertyName = data.propertyName
     this.propertyValue = data.propertyValue
     this.id = data.id
+    this.flat = data
     this.desc = `File Has '${this.propertyName}' Property with '${this.propertyValue}' as its value`
   }
   match(file: midFile): RuleMatchRes{
