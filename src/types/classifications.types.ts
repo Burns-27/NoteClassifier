@@ -1,3 +1,4 @@
+import { SettingGroupItem } from "obsidian";
 import type { midFile } from "./files.types";
 import type { ClsPathRes, ClsPropsRes, ClsRes } from "./responses.types";
 import { FlatRule, TRule } from "./rules.types";
@@ -11,7 +12,9 @@ export interface TCls {
   match: (file: midFile) => ClsRes,
   getDesc: (cont: HTMLElement) => void,
   getProps: () => ClsPropsRes, 
-  flat:FlatCls
+  flat: FlatCls
+  rulesSettingArray: (openModal:(cls:TCls,rule:FlatRule)=>void) => SettingGroupItem[], 
+  
 }
 
 export type FlatCls = {

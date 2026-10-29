@@ -1,11 +1,12 @@
 
 import { FlatCls, TCls } from "../types/classifications.types";
-import { TRule } from "../types/rules.types";
+import { FlatRule, TRule } from "../types/rules.types";
 import { RuleFactory } from "../Rules/RuleFactory";
 import { midFile } from "../types/files.types";
 import { settingUtil } from "../settings/settingsUtil";
 import { devlog } from "../logger";
 import { ClsPathRes, ClsPropsRes, ClsRes } from "../types/responses.types";
+import { SettingGroupItem } from "obsidian";
 
 export class Classification implements TCls{
   readonly id: string;
@@ -106,7 +107,17 @@ export class Classification implements TCls{
         message:"No Parent ID"
       }
     }
-  }
+ }
+  rulesSettingArray(openModal:(cls:TCls, rule:FlatRule)=>void): SettingGroupItem[]{
+    let array: SettingGroupItem[] = []
+    this.rules.forEach((r) => {
+      return {
+        name: r.getDesc(),
+        action:()=>openModal(this, r.flat)
+      }
+    })
+    return array
+  } ;
 }
 
 export class NodeClass {
