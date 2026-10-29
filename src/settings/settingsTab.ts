@@ -2,17 +2,85 @@ import { App, PluginSettingTab,  SettingDefinitionItem, SettingGroupItem } from 
 import NoteClassifier from '../main';
 import { NodeClass } from '../classification/Classification';
 import { settingUtil } from './settingsUtil';
-import {  TCls } from '../types/classifications.types';
+import {  FlatCls, TCls } from '../types/classifications.types';
 import { ClsModal } from './ClsModal';
 import { logger } from '../logger';
 import { FlatRule } from '../types/rules.types';
 import { RuleModal } from './rulesModal';
+import { NoteClassifierSettings, settingKeys } from '../types/settings.types';
 
+function getPath( path: string): unknown {
+	const pathArray = path.split('.')
+	const rules: Map<string, FlatCls> = settingUtil.get().rules
+	let id: string = ''
+	let cls: FlatCls | undefined 
+	if (pathArray.length == 1) {
+		return settingUtil.get()[path as settingKeys]
+	}
+	if (pathArray.length == 3 && pathArray[0] == "rules") {
+		if (pathArray[1]) {
+			cls = rules.get(id)
+		}
+		if (!cls) return undefined
+		if (pathArray[2]) {
+			switch (pathArray[2]) {
+				case "name":
+					return cls.name
+				case "description":
+					return cls.description
+				case "destination":
+					return cls.destination
+				default:
+					return undefined
+			}
+		}
+	}
+	return undefined
+}
+function setPath( path: string, value: unknown) {
+	const pathArray = path.split('.')
+	const rules: Map<string, FlatCls> = settingUtil.get().rules
+	let id: string = ''
+	let cls: FlatCls | undefined 
+	if (pathArray.length == 1) {
+		settingUtil.updateMain({ [path]: value })
+		return
+	}
+	if (pathArray.length == 3 && pathArray[0] == "rules" && typeof value == "string") {
+		if (pathArray[1]) {
+			cls = rules.get(id)
+		}
+		if (!cls) return
+		if (pathArray[2]) {
+			switch (pathArray[2]) {
+				case "name":
+					cls.name = value
+					break
+				case "description":
+					cls.description = value
+					break
+				case "destination":
+					cls.destination = value
+					break
+				default:
+					return
+			}
+			settingUtil.updateCls(cls)
+		}
+	}
+}
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
 	constructor(app: App, plugin: NoteClassifier) {
 		super(app, plugin);
 		this.plugin = plugin;
+	}
+	getControlValue(key: string): unknown {
+		return getPath( key)
+	}
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		setPath(key, value)
+		await this.plugin.saveSettings()
 	}
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		const rootNodes = [...settingUtil.rootNodes()]

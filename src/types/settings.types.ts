@@ -13,7 +13,7 @@ export interface NoteClassifierSettings {
     ignoredFolders: string[]
     ignoreFilesProperty:string
 }
-
+export type settingKeys = "nextID"|"ErrorNotice"|"SummaryNotice"|"NoticeProperty"|"debug"|"ignoredFolders"|"ignoreFilesProperty"
 export const DEFAULT_SETTINGS: NoteClassifierSettings = {
   rules: new Map<string, FlatCls>,
   nextID: 1,
