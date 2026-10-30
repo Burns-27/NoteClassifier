@@ -9,7 +9,7 @@ import { TCls } from '../types/classifications.types';
 import { settingUtil } from '../settings/settingsUtil';
 import { appUtils } from '../tools/AppUtils';
 import { FailRes, NoteClsRes, updateRes } from '../types/responses.types';
-import { devlog } from '../logger';
+import { devlog, } from '../logger';
 
 export class ClsFile implements TClsFile {
 	readonly TFile: TFile;
@@ -74,17 +74,20 @@ export class ClsFile implements TClsFile {
 			note: cls,
 		};
 	}
-	getDestination(): {destination:string, folderArray:string[]}{
+	getDestination(): { destination: string, folderArray: string[] }{
+		let Record: Record<string, unknown> = {}
+		let props:string[] = []
 		const clsDest = this.cls.getPath();
+		Record.clsDest = clsDest
 		let destArray: string[] = [];
 		if (!clsDest.success) {
-			devlog.test('Getting Cls Destination Array', clsDest);
+			devlog.err('Path - Note getDest','Getting Cls Destination Array', Record);
 			return {destination:this.startPath, folderArray:[]};
 		}
 		clsDest.path.forEach((section) => {
 			if (section.startsWith('[') && section.endsWith(']')) {
 				const prop = section.slice(1, -1);
-				devlog.test('Prop from path', { prop: prop });
+				props.push(prop)
 				if (!this.frontmatter) {
 					destArray.push(prop);
 					this.reportFlags.push('Missing Properties for path');
@@ -114,13 +117,13 @@ export class ClsFile implements TClsFile {
 				return;
 			}
     });
-    const folderArray = [...destArray]
+		const folderArray = [...destArray]
+		Record.folderArray = folderArray
 		destArray.push(this.TFile.name);
+		Record.destArray = destArray
 		const destination = normalizePath(destArray.join('/'));
-		devlog.test('Resulting Destination', {
-			file: this.name,
-			destination: destination,
-		});
+		Record.destination = destination
+		devlog.loc('Path - Note Get Dest', 'Before Return', Record);
 		return {destination, folderArray};
 	}
 	validateProperties() {
@@ -152,11 +155,11 @@ export class ClsFile implements TClsFile {
 		}
 	}
 
-  update(): updateRes{
+  async update(): Promise<updateRes>{
     let moved = false
     let flagged = false
     if (this.needsMoved) {
-       appUtils.moveFile(this.TFile, this.destination, this.folderArray)
+       await appUtils.moveFile(this.TFile, this.destination, this.folderArray)
       moved = true
     }
     if (this.reportFlags.length !== 0) {

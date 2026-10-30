@@ -4,54 +4,65 @@ import { NodeClass } from '../classification/Classification';
 import { settingUtil } from './settingsUtil';
 import {  FlatCls, TCls } from '../types/classifications.types';
 import { ClsModal } from './ClsModal';
-import { logger } from '../logger';
+import { devlog, logger } from '../logger';
 import { FlatRule } from '../types/rules.types';
 import { RuleModal } from './rulesModal';
 import { NoteClassifierSettings, settingKeys } from '../types/settings.types';
 
-function getPath( path: string): unknown {
+function getPath(path: string): unknown {
 	const pathArray = path.split('.')
-	const rules: Map<string, FlatCls> = settingUtil.get().rules
+	const rules: Map<string, FlatCls> = settingUtil.get().classes
 	let id: string = ''
 	let cls: FlatCls | undefined 
+	let value:unknown = ''
 	if (pathArray.length == 1) {
-		return settingUtil.get()[path as settingKeys]
+		value= settingUtil.get()[path as settingKeys]
+		//devlog.loc('getPath', 'Main setting',{path, pathArray, value})
+		return value
 	}
 	if (pathArray.length == 3 && pathArray[0] == "rules") {
-		if (pathArray[1]) {
+		if (pathArray[0] && pathArray[1]) {
+			id = pathArray[1]
 			cls = rules.get(id)
 		}
+		//devlog.loc('getPath', 'Cls Setting', {path, pathArray, id, cls})
 		if (!cls) return undefined
 		if (pathArray[2]) {
 			switch (pathArray[2]) {
 				case "name":
-					return cls.name
+					value = cls.name
+					break
 				case "description":
-					return cls.description
+					value = cls.description
+					break
 				case "destination":
-					return cls.destination
+					value = cls.destination
+					break
 				default:
-					return undefined
+					value = undefined
+					break
 			}
 		}
 	}
-	return undefined
+	//devlog.loc('getPath', 'Cls Setting',{path, pathArray, id, cls, value})
+	return value
 }
-function setPath( path: string, value: unknown) {
+function setPath(path: string, value: unknown) {
 	const pathArray = path.split('.')
-	const rules: Map<string, FlatCls> = settingUtil.get().rules
+	const classes: Map<string, FlatCls> = settingUtil.get().classes
 	let id: string = ''
 	let cls: FlatCls | undefined 
 	if (pathArray.length == 1) {
 		settingUtil.updateMain({ [path]: value })
-		return
+		//devlog.loc('setPath','Main Rules Update', {path, value, settings: settingUtil.get()})
 	}
 	if (pathArray.length == 3 && pathArray[0] == "rules" && typeof value == "string") {
 		if (pathArray[1]) {
-			cls = rules.get(id)
+			id = pathArray[1]
+			cls = classes.get(id)
 		}
-		if (!cls) return
-		if (pathArray[2]) {
+		
+		if (pathArray[2]&&cls) {
 			switch (pathArray[2]) {
 				case "name":
 					cls.name = value
@@ -59,14 +70,15 @@ function setPath( path: string, value: unknown) {
 				case "description":
 					cls.description = value
 					break
-				case "destination":
-					cls.destination = value
-					break
+					case "destination":
+						cls.destination = value
+						break
 				default:
-					return
+					break
 			}
 			settingUtil.updateCls(cls)
 		}
+		//devlog.loc('setPath', 'clsUpdate', {path, pathArray, value, id, cls, settings:settingUtil.get()})
 	}
 }
 export class NoteClassifierSettingTab extends PluginSettingTab {
@@ -76,9 +88,12 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 	getControlValue(key: string): unknown {
-		return getPath( key)
+		const value = getPath(key)
+		//devlog.loc('GetControlValue', "Results", {key, value})
+		return value
 	}
 	async setControlValue(key: string, value: unknown): Promise<void> {
+		//devlog.loc('SetControlValue',"Function Called",{key, value})
 		setPath(key, value)
 		await this.plugin.saveSettings()
 	}
@@ -144,6 +159,8 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		const cls = node.classification
 		const flatcls = cls.flat
 		const keystart = `rules.${flatcls.id}`
+		const rulesArray = cls.rulesSettingArray(this.openRulesModal)
+		devlog.loc('getClsPage','before Return',{cls, flatcls})
 		return {
 			type: "page",
 			//id:`${flatRule.id}.${index}`,
@@ -181,7 +198,15 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						name: "add rule",
 						action:()=> this.newRulesModal(cls)
 					},
-					items:cls.rulesSettingArray(this.openRulesModal)
+					onDelete: (index) => {
+						const ruleId = rulesArray[index]?.id ?? 'err'
+						flatcls.rules = flatcls.rules.filter(r => r !== ruleId)
+						settingUtil.get().rules.delete(ruleId)
+						settingUtil.updateCls(flatcls)
+						void this.plugin.saveSettings()
+						this.update()
+					},
+					items:rulesArray.map(r=>r.item),
 				}, 
 				{
 					heading: "Child Classifications",
@@ -195,10 +220,10 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 	newClsModal = (parentID?: string) => {
 		const cls = settingUtil.newCls(parentID)
 		new ClsModal(this.plugin, cls.cls, (flatCls) => {
-			const res = settingUtil.updateCls(flatCls)
+			settingUtil.updateCls(flatCls)
 			void this.plugin.saveSettings()
 			this.update()
-		})
+		}).open()
 	}
 	openPropertyModal = (prop: string) => {
 		logger.debug("Propert Rule Modal")
@@ -214,16 +239,19 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			tag: 'new',
 			id:id
 		}
-		cls.flat.rules.set(id, rule)
+		cls.flat.rules.push(id)
+		settingUtil.get().rules.set(id, rule)
 		const updatedClsRes = settingUtil.updateCls(cls.flat)
 		this.openRulesModal(updatedClsRes.cls, rule)
 	}
 	openRulesModal = (cls: TCls, rule: FlatRule) => {
 		new RuleModal(this.plugin, rule, (newRule: FlatRule) => {
-			cls.flat.rules.set(newRule.id, newRule)
-			const res = settingUtil.updateCls(cls.flat)
+			cls.flat.rules.push(rule.id)
+			cls.flat.rules = [...new Set(cls.flat.rules)]
+			settingUtil.get().rules.set(rule.id,newRule)			
+			settingUtil.updateCls(cls.flat)
 			void this.plugin.saveSettings()
 			this.update()
-		})
+		}).open()
 	}
 }

@@ -13,7 +13,7 @@ export interface TCls {
   getDesc: (cont: HTMLElement) => void,
   getProps: () => ClsPropsRes, 
   flat: FlatCls
-  rulesSettingArray: (openModal:(cls:TCls,rule:FlatRule)=>void) => SettingGroupItem[], 
+  rulesSettingArray: (openModal:(cls:TCls,rule:FlatRule)=>void) => {item:SettingGroupItem, id:string}[], 
   
 }
 
@@ -21,7 +21,7 @@ export type FlatCls = {
   id: string;
   parentID?: string | null;
   name: string
-  rules: Map<string, FlatRule>,
+  rules: string[],
   destination: string,
   description?:string,
   requriedProperties:string[],

@@ -46,7 +46,10 @@ export class ClsModal extends Modal {
 			});
 		});
 		const continueButton = new ButtonComponent(this.contentEl)
-		continueButton.setButtonText('Continue').onClick(()=>this.update(this.flatCls))
+		continueButton.setButtonText('Continue').onClick(() => {
+			this.update(this.flatCls)
+			this.close()
+		})
 	}
 	
 }

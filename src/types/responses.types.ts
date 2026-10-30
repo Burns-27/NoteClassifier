@@ -1,5 +1,6 @@
 import { TCls } from "./classifications.types"
 import { TClsFile } from "./files.types"
+import { FlatRule } from "./rules.types"
 
 export type FailRes = {
   success: false,
@@ -16,7 +17,10 @@ export type ClsRes = {
   success: true, 
   cls: TCls 
 } | FailRes
-
+export type flatRuleRes = {
+  success: true,
+  rule:FlatRule
+}|FailRes
 
 export type NoteClsRes = {
   success: true,

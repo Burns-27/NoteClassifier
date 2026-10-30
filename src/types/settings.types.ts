@@ -1,10 +1,12 @@
 import { NodeClass } from "../classification/Classification";
 import type { FlatCls } from "./classifications.types";
 import type { midFile } from "./files.types";
-import type { ClsRes, UpdateClsRes } from "./responses.types";
+import type { ClsRes, flatRuleRes, UpdateClsRes } from "./responses.types";
+import { FlatRule } from "./rules.types";
 
 export interface NoteClassifierSettings {
-  rules: Map<string, FlatCls>;
+  rules: Map<string, FlatRule>;
+  classes:Map<string, FlatCls>
     nextID: number;
     ErrorNotice: boolean
   SummaryNotice: boolean
@@ -13,9 +15,12 @@ export interface NoteClassifierSettings {
     ignoredFolders: string[]
     ignoreFilesProperty:string
 }
+const defaultClasses = new Map<string, FlatCls>()
+const defaultRules = new Map<string,FlatRule>()
 export type settingKeys = "nextID"|"ErrorNotice"|"SummaryNotice"|"NoticeProperty"|"debug"|"ignoredFolders"|"ignoreFilesProperty"
 export const DEFAULT_SETTINGS: NoteClassifierSettings = {
-  rules: new Map<string, FlatCls>,
+  rules: defaultRules,
+  classes: defaultClasses,
   nextID: 1,
   ErrorNotice: true,
   SummaryNotice: true,
@@ -34,5 +39,6 @@ export interface SettingUtil {
   newCls: (parentID?:string) => UpdateClsRes,
   nextID: () => string,
   rootNodes: () => NodeClass[],
-  matchCls:(file:midFile)=>ClsRes,
+  matchCls: (file: midFile) => ClsRes,
+  getFlatRule:(id:string)=>flatRuleRes
 }
