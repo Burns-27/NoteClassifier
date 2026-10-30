@@ -9,7 +9,7 @@ import { NoteClassifierSettings } from './types/settings.types';
 import { settingUtil } from './settings/settingsUtil';
 import { appUtils } from './tools/AppUtils';
 import { ClsFile } from './classification/ClassifiedFile';
-import {  logger } from './logger';
+import {  devlog, logger } from './logger';
 import { updateRes } from './types/responses.types';
 
 
@@ -17,6 +17,7 @@ export default class NoteClassifier extends Plugin {
 	settings!: NoteClassifierSettings;
 	async onload() {
 		await this.loadSettings();
+		devlog.loc('Plugin Load')
 		this.settings = settingUtil.get()
 		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
@@ -27,7 +28,7 @@ export default class NoteClassifier extends Plugin {
 			callback: async () => {
 				const file = this.app.workspace.getActiveFile()
 				if (file) {
-				  this.updateFile(file)
+				  await this.updateFile(file)
 				}
 			}
 		})
@@ -38,8 +39,10 @@ export default class NoteClassifier extends Plugin {
 				const allFilesArray = this.app.vault.getMarkdownFiles()
 				let movedTotal = 0
 				let flaggedTotal = 0 
-				const resArray = allFilesArray.map(this.updateFile)
-				resArray.forEach((res) => {
+				for (const file of allFilesArray) {
+					const res =await  this.updateFile(file)
+					
+				
 					if (res.success) {
 						if (res.moved) {
 							movedTotal++
@@ -50,7 +53,7 @@ export default class NoteClassifier extends Plugin {
 					} else {
 						flaggedTotal++
 					}
-				})
+				}
 				logger.sum(movedTotal, flaggedTotal)
 			}
 		})
@@ -64,10 +67,11 @@ export default class NoteClassifier extends Plugin {
 		return nextID
 	}
 	
-	updateFile(this:void,file:TFile, ):updateRes {
+	async updateFile(this:void,file:TFile, ):Promise<updateRes> {
 		const clsFile = ClsFile.create(file)
+		devlog.loc('updateFile','post cls file create',{clsFile})
 		if (clsFile.success) {
-			const res =  clsFile.note.update()
+			const res =  await clsFile.note.update()
 			return res
 		} else {
 			logger.err("Unable to classifiy file.", clsFile)
@@ -79,10 +83,18 @@ export default class NoteClassifier extends Plugin {
 	}
 
 	async saveSettings() {
-		await this.saveData(settingUtil.get());
+		const settings = settingUtil.get()
+		const rules = Object.fromEntries(settings.rules)
+		const classes = Object.fromEntries(settings.classes)
+		devlog.loc('Save Settings', 'called', { settings })
+		console.debug("Save settings called")
+		await this.saveData({...settings,rules, classes});
 	}
 	async loadSettings() {
 		const data = await this.loadData() as Partial<NoteClassifierSettings>;
+		console.debug("Load settings Called")
+		
 		settingUtil.updateAll(data)
+		devlog.loc('loadSettings','Called',{data})
 	}
 }

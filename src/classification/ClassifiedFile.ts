@@ -20,8 +20,8 @@ export class ClsFile implements TClsFile {
 	private cls: TCls;
 	private needsMoved: boolean;
 	private newFrontmatter: Record<string, unknown>;
-  destination: string;
-  private folderArray: string[];
+	destination: string;
+	private folderArray: string[];
 	public classification: string;
 	reportFlags: ReportFlags[] = [];
 	constructor({ TFile, metadataCache, tags }: midFile, classification: TCls) {
@@ -37,10 +37,10 @@ export class ClsFile implements TClsFile {
 
 		if (tags) {
 			this.tags = tags;
-    }
-    const {destination, folderArray} = this.getDestination()
-    this.destination = destination
-    this.folderArray = folderArray
+		}
+		const { destination, folderArray } = this.getDestination();
+		this.destination = destination;
+		this.folderArray = folderArray;
 		if (this.startPath != this.destination) {
 			this.needsMoved = true;
 		} else {
@@ -64,6 +64,7 @@ export class ClsFile implements TClsFile {
 			metadataCache: cache,
 			tags: tags,
 		});
+		devlog.loc('*Create File', 'post match res', { matchRes, tags, cache });
 		if (!matchRes.success) return matchRes;
 		const cls = new ClsFile(
 			{ TFile: file, metadataCache: cache, tags: tags },
@@ -74,59 +75,77 @@ export class ClsFile implements TClsFile {
 			note: cls,
 		};
 	}
-	getDestination(): {destination:string, folderArray:string[]}{
+	getDestination(): { destination: string; folderArray: string[] } {
+		let Record: Record<string, unknown> = {};
+		let props: string[] = [];
 		const clsDest = this.cls.getPath();
+		Record.clsDest = clsDest;
 		let destArray: string[] = [];
 		if (!clsDest.success) {
-			devlog.test('Getting Cls Destination Array', clsDest);
-			return {destination:this.startPath, folderArray:[]};
+			devlog.err(
+				'Path - Note getDest',
+				'Getting Cls Destination Array',
+				Record,
+			);
+			return { destination: this.startPath, folderArray: [] };
 		}
 		clsDest.path.forEach((section) => {
-			if (section.startsWith('[') && section.endsWith(']')) {
-				const prop = section.slice(1, -1);
-				devlog.test('Prop from path', { prop: prop });
-				if (!this.frontmatter) {
-					destArray.push(prop);
-					this.reportFlags.push('Missing Properties for path');
-					devlog.fallback(
-						'File has no frontmatter for property replacement',
-						{ prop: prop, file: this.name },
-					);
-					return;
-				}
-				if (
-					!this.frontmatter[prop] &&
-					typeof this.frontmatter[prop] != 'string'
-				) {
-					destArray.push(prop);
-					this.reportFlags.push('Missing Properties for path');
-					devlog.fallback(
-						'File does not have required prop for property replacement',
-						{ file: this.name, frontmatter: this.frontmatter },
-					);
-					return;
-				} else {
-					destArray.push(this.frontmatter[prop] as string);
-					return;
-				}
-			} else {
+			if (!(section.startsWith('[') && section.endsWith(']'))) {
 				destArray.push(section);
 				return;
 			}
-    });
-    const folderArray = [...destArray]
-		destArray.push(this.TFile.name);
-		const destination = normalizePath(destArray.join('/'));
-		devlog.test('Resulting Destination', {
-			file: this.name,
-			destination: destination,
+			let value: string = '';
+			const fallback = '|';
+			const prop = section.slice(1, -1);
+			let fallbackflag = false;
+			props.push(prop);
+			// Checks for Fm, that it has the prop, and that the props value is a string
+			// if not, triggers the flag for fall back
+			if (
+				!this.frontmatter ||
+				!this.frontmatter[prop] ||
+				typeof this.frontmatter[prop] != 'string'
+			) {
+				fallbackflag = true;
+			} else {
+				value = this.frontmatter[prop];
+			}
+			//checks if it needs the fallback value
+			if (fallbackflag) {
+				//checks if there is a fall back value
+				if (prop.includes(fallback) && !prop.endsWith(fallback)) {
+					//Retrieves the fall back value and pushes that.
+					const splitProp = prop.slice(
+						prop.indexOf(fallback) + fallback.length,
+					);
+					value = splitProp;
+				} else {
+					//if there isnt a fall back, checks the settings for what to default to
+					if (settingUtil.get().pathFallbackDefault == 'Prop') {
+						value = prop;
+					}
+					//dont need to check for skip. value is default '', which after normalizePath resolves the same.
+					if (settingUtil.get().flagFallbackDefault) {
+						this.reportFlags.push('Missing Properties for path');
+					}
+				}
+			}
+			destArray.push(value)
+			return;
 		});
-		return {destination, folderArray};
+		const folderArray = [...destArray];
+		Record.folderArray = folderArray;
+		destArray.push(this.TFile.name);
+		Record.destArray = destArray;
+		const destination = normalizePath(destArray.join('/'));
+		Record.destination = destination;
+		devlog.loc('Path - Note Get Dest', 'Before Return', Record);
+		return { destination, folderArray };
 	}
 	validateProperties() {
 		const propsRes = this.cls.getProps();
-		if (!propsRes.success) {
-			devlog.test('No required props');
+		if (!propsRes.success || propsRes.props.length == 0) {
+			devlog.loc('Properties - validate','No required props');
 			return;
 		}
 		const props = propsRes.props;
@@ -152,18 +171,30 @@ export class ClsFile implements TClsFile {
 		}
 	}
 
-  update(): updateRes{
-    let moved = false
-    let flagged = false
-    if (this.needsMoved) {
-       appUtils.moveFile(this.TFile, this.destination, this.folderArray)
-      moved = true
-    }
-    if (this.reportFlags.length !== 0) {
-      flagged = true
-      this.newFrontmatter[settingUtil.get().NoticeProperty] = this.reportFlags
-    }
-     appUtils.processFrontmater(this.TFile, this.newFrontmatter);
-    return {success:true, moved:moved, flagged: flagged}
+	async update(): Promise<updateRes> {
+		let moved = false;
+		let flagged = false;
+		await appUtils.processFrontmater(
+			this.TFile,
+			this.newFrontmatter,
+			this.reportFlags,
+		);
+		if (this.needsMoved) {
+			await appUtils.moveFile(
+				this.TFile,
+				this.destination,
+				this.folderArray,
+			);
+			moved = true;
+		}
+
+		devlog.loc('Update', 'After Process', {
+			moved,
+			flagged,
+			oldFrontmatter: this.frontmatter,
+			newFM: this.newFrontmatter,
+			ReportFlags: this.reportFlags,
+		});
+		return { success: true, moved: moved, flagged: flagged };
 	}
 }

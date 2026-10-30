@@ -37,26 +37,27 @@ class ExactTagRule implements TagRule{
   readonly matchType = "exact";
   tag: string
   id: string
-  readonly desc: string
+  flat:FlatExactTagRule
   constructor(data: FlatExactTagRule) {
     this.tag = data.tag
     this.id = data.id
-    this.desc = `File has ${data.tag}, exactly`
+    this.flat = data
   }
 
   match(file: midFile): RuleMatchRes{
+    devlog.loc('Match - Exact Tag Rule', 'Begining',{tag:this.tag, file})
     if (!file.tags || file.tags.length == 0) {
       const res: FailRes = {
         success: false,
         message:"File Has no tags"
       }
-      devlog.test("Tag Exact Match Fail", res)
+      devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
       return res
       }
-    const check = file.tags.find((t) => t == this.tag) 
+    const check = file.tags.find((t) => t.replace("#",'') == this.tag) 
     if (!check) {
       const res:FailRes = { success: false, message: "File doesnt have matching tag", context: { fileTags: file.tags, expectedTag: this.tag } }
-      devlog.test("Tag Exact Match Fail", res)
+      devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
       return res
     }
     return {
@@ -64,7 +65,7 @@ class ExactTagRule implements TagRule{
     }
   }
   getDesc(): string{
-    return `File has #${this.tag}`
+    return ` has #${this.tag}`
   }
 }
 
@@ -73,11 +74,11 @@ class IncludeTagRule implements TagRule {
   readonly matchType = "includes";
   tag: string
   id: string
-  readonly desc:string
+  flat:FlatIncludeTagRule
   constructor(data: FlatIncludeTagRule) {
     this.tag = data.tag
     this.id = data.id
-    this.desc = `File Includes ${data.tag}`
+    this.flat = data
   }
   match(file: midFile): RuleMatchRes{
     if (!file.tags || file.tags.length == 0) {
@@ -85,13 +86,14 @@ class IncludeTagRule implements TagRule {
         success: false,
         message:"File has No Tags"
       }
-      devlog.test("Tag Include Match Fail", res)
+      devlog.loc('Match - Include Tag Rule',"Tag Include Match Fail", res)
       return res
     }
-    const splitTags: string[] = []
+    let splitTags: string[] = []
     for (const tag of file.tags) {
       splitTags.push(...tag.split('/'))
     }
+    splitTags = splitTags.map((tag)=> tag.replace('#',""))
     const check = splitTags.find((t) => t == this.tag)
     if (!check) {
       const res: FailRes = {
@@ -103,7 +105,7 @@ class IncludeTagRule implements TagRule {
           goalTag:this.tag,
         }
       }
-      devlog.test("No matching tag", res)
+      devlog.loc('Match - Include Tag Rule',"No matching tag", res)
       return res
     }
     return {
@@ -111,6 +113,6 @@ class IncludeTagRule implements TagRule {
     }
   }
   getDesc() {
-    return `File tags includes '${this.tag}'`
+    return `includes '#${this.tag}'`
   }
 }

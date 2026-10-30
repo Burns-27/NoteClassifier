@@ -1,6 +1,6 @@
 import { CachedMetadata, TFile } from "obsidian"
 import { TCls } from "../../types/classifications.types"
-import { midFile } from "../../types/files.types"
+import { midFile, TClsFile } from "../../types/files.types"
 import { MockCls } from "./cls.mock.factory"
 import { ClsRes } from "../../types/responses.types"
 import { mock } from "node:test"
@@ -23,9 +23,7 @@ export class MockFile {
   file: TFile
   metadataCache: CachedMetadata
   tags: string[]
-  cls: TCls
   mockCls: MockCls
-  mockMatchRes: ClsRes
   midfile: midFile
   constructor(moc:MockFileArgs) {
     this.file = {
@@ -34,17 +32,14 @@ export class MockFile {
       extension: ".md",
       path:moc.path
     } as unknown as TFile
-    this.cls = moc.cls.cls
     this.mockCls = moc.cls
-    this.expectedClsName = moc.cls.cls.name
+    this.expectedClsName = moc.cls.flatCls.name
     this.metadataCache = {
-        frontmatter:moc.properties
+      frontmatter: {...moc.properties, saftey:'yes'},
+      
     }
     this.tags = moc.tags
-    this.mockMatchRes = {
-      success: true,
-      cls: moc.cls.cls
-    }
+    
     this.midfile = {
       TFile: this.file,
       metadataCache: this.metadataCache,

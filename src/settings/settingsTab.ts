@@ -2,18 +2,99 @@ import { App, PluginSettingTab,  SettingDefinitionItem, SettingGroupItem } from 
 import NoteClassifier from '../main';
 import { NodeClass } from '../classification/Classification';
 import { settingUtil } from './settingsUtil';
-import { FlatCls, TCls } from '../types/classifications.types';
+import {  FlatCls, TCls } from '../types/classifications.types';
 import { ClsModal } from './ClsModal';
-import { logger } from '../logger';
+import { devlog, logger } from '../logger';
+import { FlatRule } from '../types/rules.types';
+import { RuleModal } from './rulesModal';
+import { NoteClassifierSettings, settingKeys } from '../types/settings.types';
 
+function getPath(path: string): unknown {
+	const pathArray = path.split('.')
+	const rules: Map<string, FlatCls> = settingUtil.get().classes
+	let id: string = ''
+	let cls: FlatCls | undefined 
+	let value:unknown = ''
+	if (pathArray.length == 1) {
+		value= settingUtil.get()[path as settingKeys]
+		//devlog.loc('getPath', 'Main setting',{path, pathArray, value})
+		return value
+	}
+	if (pathArray.length == 3 && pathArray[0] == "rules") {
+		if (pathArray[0] && pathArray[1]) {
+			id = pathArray[1]
+			cls = rules.get(id)
+		}
+		//devlog.loc('getPath', 'Cls Setting', {path, pathArray, id, cls})
+		if (!cls) return undefined
+		if (pathArray[2]) {
+			switch (pathArray[2]) {
+				case "name":
+					value = cls.name
+					break
+				case "description":
+					value = cls.description
+					break
+				case "destination":
+					value = cls.destination
+					break
+				default:
+					value = undefined
+					break
+			}
+		}
+	}
+	//devlog.loc('getPath', 'Cls Setting',{path, pathArray, id, cls, value})
+	return value
+}
+function setPath(path: string, value: unknown) {
+	const pathArray = path.split('.')
+	const classes: Map<string, FlatCls> = settingUtil.get().classes
+	let id: string = ''
+	let cls: FlatCls | undefined 
+	if (pathArray.length == 1) {
+		settingUtil.updateMain({ [path]: value })
+		//devlog.loc('setPath','Main Rules Update', {path, value, settings: settingUtil.get()})
+	}
+	if (pathArray.length == 3 && pathArray[0] == "rules" && typeof value == "string") {
+		if (pathArray[1]) {
+			id = pathArray[1]
+			cls = classes.get(id)
+		}
+		
+		if (pathArray[2]&&cls) {
+			switch (pathArray[2]) {
+				case "name":
+					cls.name = value
+					break
+				case "description":
+					cls.description = value
+					break
+					case "destination":
+						cls.destination = value
+						break
+				default:
+					break
+			}
+			settingUtil.updateCls(cls)
+		}
+		//devlog.loc('setPath', 'clsUpdate', {path, pathArray, value, id, cls, settings:settingUtil.get()})
+	}
+}
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
 	constructor(app: App, plugin: NoteClassifier) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
-	async setControlValue(key: string, value: unknown):  Promise<void> {
-		settingUtil.updateMain({ [key]: value })
+	getControlValue(key: string): unknown {
+		const value = getPath(key)
+		//devlog.loc('GetControlValue', "Results", {key, value})
+		return value
+	}
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		//devlog.loc('SetControlValue',"Function Called",{key, value})
+		setPath(key, value)
 		await this.plugin.saveSettings()
 	}
 	getSettingDefinitions(): SettingDefinitionItem[] {
@@ -25,128 +106,179 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				desc:"Enable Debug logs in the developer tools",
 				control:{type:"toggle", key:"debug"}
 			},
-			{
-				name: "Prompt on save",
-				desc: "Prompt to run a Update All command when saving changes to a classification",
-				control:{type:"toggle",key:"promptOnSave"}
-		},
-			{
-				heading: "Reports",
-				type: "group",
-				items: [
 					{
 						name: "Create Reports",
-						desc:"Create a .md file when running a command to get the matching report. See doc's for details. ",
-						control: { type: "toggle", key: "createReports" },
+						desc:"Create a .bases file with views that filters based on notices. See docs for details.  ",
+						action:()=>{logger.debug('Create Report button Clicked')},
 					},
-					{
-						name: "Auto Open Reports",
-						desc:"Automatically open reports in a new tab after a command is run",
-						control: { type: "toggle", key: "autoOpenReports" },
-						visible:()=>this.plugin.settings.createReports
-					},
-					{
-						name: "Report Location",
-						desc: `Where the reports will be saved. See docs for info`,
-						visible:()=>this.plugin.settings.createReports,
-						control: {
-							type: "dropdown",
-							key: "reportLocation",
-							options: {folder:"Specific Folder", root:"Vault Root", dynamic:"Command Location"}
-						}
-					}
-				]
-			},
 			{
-				heading: "Notificaitons",
-				type: "group",
+				name: "Notificaitons and defaults",
+				type: "page",
+				desc:"Choose what notifications and default values are",
 				items: [
 					{
 						name: "Summary Notice",
-						desc:"Show Notice of how many files moved/audited post command",
-						control:{type:"toggle",key:"SummaryNotice"}
+						desc: "Show Notice of how many files moved/audited post command",
+						control: { type: "toggle", key: "SummaryNotice" }
 					},
 					{
 						name: "Error Notice",
 						desc: "Show notice when there a command is unable to be completed for a file",
-						control:{type:'toggle', key:'ErrorNotice'}
+						control: { type: 'toggle', key: 'ErrorNotice' }
+					},
+					{
+						name: "Notice Property",
+						desc: "the property used to indicate a file has errors",
+						control: { type: 'text', key: 'NoticeProperty' }
+					}, {
+						type: 'group',
+						heading: 'Path Fallback behavior',
+						desc: "When a destination uses a property value, you can provide a fallback value. The default fallback value is for when the file does not have the matching property, and no fallback behavior is set.",
+						items: [
+							{
+								name: "Flag For default",
+								desc: "Add a error flag to files that use the default fallback behavior",
+								control: { type: 'toggle', key: 'flagFallbackDefault' }
+							},
+							{
+								name: "Default Fallback Value",
+								desc: 'What will be used inplace of the property value',
+								control: {
+									key: 'pathFallbackDefault',
+									type: 'dropdown',
+									options: { Prop: 'The Property', Skip: 'Skip the folder' }
+								}
+							}
+						]
 					}
+
 				]
 			},
 			{
+				type: "page",
+				name: "Ignore File/Folders",
+				items: [
+					{
+						name: "Ingore property",
+						desc: "if this property is checked on a file, it will be ignored by NoteClassifier",
+						control:{key:"ignoreFilesProperty", type:"text"}
+					}
+				] //TODO (Settings) Figure out how you want to do "Ignore Folders"
+			},
+			{
+				type: "page",
+				name: "Main Classifications",
+				items:[{
 				heading: 'Classes',
 				type: "list",
 				addItem: {
 					name: "Add Classification",
 					action: ()=>this.newClsModal()
 				},
-				items: rootNodes.map((rule, index) => this.getRulePage(rule, index))
-			}
+				items: rootNodes.map((rule, index) => this.getClsPage(rule, index))
+			}]
+			},
+			
 		]
 	}
 	
-	getRulePage(rule: NodeClass, index: number): SettingGroupItem {
-		const flatRuleRes = settingUtil.getFlatCls(rule.classification.id)
-		if (!flatRuleRes.success) return {
-			type: "page",
-			name: "Error",
-			items: [
-				{
-					name: "Classification Not found",
-					desc:"This Classification was not found, please reload app, or plugin"
-				}
-			]
-		}
-		
-		const flatRule = flatRuleRes.cls
-		//console.debug("Node for Page",rule)
-		const cls = rule.classification
-		//const children = rule.children
+	getClsPage(node: NodeClass, index: number): SettingGroupItem {
+		const cls = node.classification
+		const flatcls = cls.flat
+		const keystart = `rules.${flatcls.id}`
+		const rulesArray = cls.rulesSettingArray(this.openRulesModal)
+		devlog.loc('getClsPage','before Return',{cls, flatcls})
 		return {
 			type: "page",
 			//id:`${flatRule.id}.${index}`,
-			name: `Classification: ${flatRule.name}`,
+			name: `${flatcls.name}`,
+			desc:`${flatcls.description??""}`,
 			items: [
 				{
+					name: "Name",
+					control:{key:`${keystart}.name`, type:"text"}
+			},
+				{
 					name: "Description",
-					render: ((setting) => {
-						setting.setName("Description")
-						cls.getDesc(setting.descEl)
-						setting.addExtraButton((button) => {
-							button.setIcon("pencil")
-							button.onClick(() => {
-								//console.debug("Edit CLs button clicked")
-								this.openClsModal(cls, flatRule)
-							})
-						})
-					})
+					control:{key:`${keystart}.description`, type:"textarea"}
 				},
 				{
-					heading: "Child Classifications",
+					name: "Destination",
+					desc: "Folder where files of this class should be moved to. See Doc's for syntax",
+					control:{key:`${keystart}.destination`, type:"text"}
+				},
+				{
+					heading: "Properties",
 					type: "list",
-					addItem: { name: "Add Child Classificaiton", action: () => this.newClsModal(flatRule.id) },
-					items: rule.children.map((child, index)=>this.getRulePage(child,index ))
+					emptyState: "No Required Properties",
+					addItem: {
+						name: "add property",
+						action:()=> this.newPropertyModal()
+					},
+					items: flatcls.requriedProperties.map((prop) => ({name:prop, action:()=>this.openPropertyModal(prop)}))
+				},
+				{
+					heading: "Rules",
+					type: "list",
+					emptyState: "No Rules - No files will match",
+					addItem: {
+						name: "add rule",
+						action:()=> this.newRulesModal(cls)
+					},
+					onDelete: (index) => {
+						const ruleId = rulesArray[index]?.id ?? 'err'
+						flatcls.rules = flatcls.rules.filter(r => r !== ruleId)
+						settingUtil.get().rules.delete(ruleId)
+						settingUtil.updateCls(flatcls)
+						void this.plugin.saveSettings()
+						this.update()
+					},
+					items:rulesArray.map(r=>r.item),
+				}, 
+				{
+					heading: "Child Classifications",
+					type: "group",
+					extraButtons:[(button)=>{button.setIcon('plus').setTooltip('Add child classification').onClick(()=>this.newClsModal(cls.id))}] ,
+					items: node.children.map((child, index)=>this.getClsPage(child,index ))
 				}
 			]
 		}
 	}
-	openClsModal(cls: TCls, flatCls: FlatCls) {
-		//console.debug("open cls modal ran")
-		new ClsModal(this.plugin, flatCls, cls,  (newCls: FlatCls) => {
-			const updateResults = settingUtil.updateCls(newCls)
-			console.debug("Cls Modal closed, cls updated", updateResults)
+	newClsModal = (parentID?: string) => {
+		const cls = settingUtil.newCls(parentID)
+		new ClsModal(this.plugin, cls.cls, (flatCls) => {
+			settingUtil.updateCls(flatCls)
 			void this.plugin.saveSettings()
 			this.update()
 		}).open()
 	}
-	newClsModal(parentID?:string) {
-		const res = settingUtil.newCls(parentID)
-								if (!res.success) {
-									logger.err("Unable to update cls. ", res)
-									this.update()
-									return
-								}
-								const { cls, flatCls } = res
-		this.openClsModal(cls, flatCls)
+	openPropertyModal = (prop: string) => {
+		logger.debug("Propert Rule Modal")
+	}
+	newPropertyModal = () => {
+		logger.debug("New Property rule Modal")
+	}
+	newRulesModal = (cls: TCls) => {
+		const id = settingUtil.nextID()
+		let rule: FlatRule = {
+			type: 'tag',
+			matchType: 'exact',
+			tag: 'new',
+			id:id
+		}
+		cls.flat.rules.push(id)
+		settingUtil.get().rules.set(id, rule)
+		const updatedClsRes = settingUtil.updateCls(cls.flat)
+		this.openRulesModal(updatedClsRes.cls, rule)
+	}
+	openRulesModal = (cls: TCls, rule: FlatRule) => {
+		new RuleModal(this.plugin, rule, (newRule: FlatRule) => {
+			cls.flat.rules.push(rule.id)
+			cls.flat.rules = [...new Set(cls.flat.rules)]
+			settingUtil.get().rules.set(rule.id,newRule)			
+			settingUtil.updateCls(cls.flat)
+			void this.plugin.saveSettings()
+			this.update()
+		}).open()
 	}
 }

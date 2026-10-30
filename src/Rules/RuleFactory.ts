@@ -2,17 +2,18 @@ import { FlatRule, TRule } from "../types/rules.types"
 import { NewPropertyRule } from "./propertyRule"
 import { NewTagRule } from "./tagRule"
 
-export function RuleFactory(rules: FlatRule[]): TRule[] {
-  let madeRules: TRule[] = []
-  for (const rule of rules) {
+export function RuleFactory(rules: FlatRule[]): Map<string,TRule> {
+  let madeRules: Map<string, TRule> = new Map()
+  rules.forEach((rule) => { 
+
     switch (rule.type) {
       case 'property':
-        madeRules.push(NewPropertyRule(rule))
+        madeRules.set(rule.id, NewPropertyRule(rule))
         break
       case 'tag':
-        madeRules.push(NewTagRule(rule))
+        madeRules.set(rule.id,NewTagRule(rule))
         break
     }
-  }
+  })
   return madeRules
 }
