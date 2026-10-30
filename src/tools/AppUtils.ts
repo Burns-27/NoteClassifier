@@ -1,5 +1,5 @@
 import { App, CachedMetadata, getAllTags, normalizePath, TFile } from "obsidian";
-import { logger } from "../logger";
+import { devlog, logger } from "../logger";
 
 export class AppUtils {
   private static instance: AppUtils;
@@ -30,15 +30,17 @@ export class AppUtils {
       }
     }).catch((e)=>logger.debug(e))
   }
-  public  moveFile(file: TFile, destination: string, folderArray: string[]) {
+  public async moveFile(file: TFile, destination: string, folderArray: string[]) {
     let path: string = ''
-    folderArray.forEach((folder) => {
+    for( let folder of folderArray){
       path = path ? `${path}/${folder}` : folder
       const check = this.app.vault.getFolderByPath(path)
       if (!check) {
-         void this.app.vault.createFolder(normalizePath(path))
+          await this.app.vault.createFolder(normalizePath(path))
       }
-    })
+    }
+    const check = this.app.vault.getFolderByPath(path)
+    devlog.loc('MoveFile', 'Right before move', { file, destination, path, check })
      this.app.fileManager.renameFile(file, destination).catch((e)=>logger.debug(e))
   }
 }

@@ -1,8 +1,8 @@
 import { Classification, NodeClass } from "../classification/Classification";
-import { logger } from "../logger";
+import { devlog, logger } from "../logger";
 import { FlatCls, TCls } from "../types/classifications.types";
 import type { midFile } from "../types/files.types";
-import type {  ClsRes,  UpdateClsRes } from "../types/responses.types";
+import type {  ClsRes,  flatRuleRes,  UpdateClsRes } from "../types/responses.types";
 import { FlatRule } from "../types/rules.types";
 import { DEFAULT_SETTINGS, NoteClassifierSettings, SettingUtil } from "../types/settings.types";
 
@@ -10,7 +10,6 @@ let settings: NoteClassifierSettings = { ...DEFAULT_SETTINGS }
 let nodeMap:Map<string, NodeClass>= new Map()
 let clsMap: Map<string, TCls> = new Map()
 let nodeTree: Array<NodeClass> = []
-
 const getSettings = (): NoteClassifierSettings => {
   return settings
 }
@@ -20,12 +19,21 @@ const getRootNodes = (): Array<NodeClass> => {
   return nodeTree
 }
 function buildClsMap(){
-  const flatClsArray = settings.rules
-  flatClsArray.forEach((cls, key) => {
-    clsMap.set(key, new Classification(cls))
+  settings.classes.forEach((cls, key) => {
+    clsMap.set(key, new Classification(cls));
+    return
   })
 }
-
+function getRule(id: string):flatRuleRes{
+  const rule = settings.rules.get(id)
+  if (rule) {
+    return {
+      success: true,
+      rule
+    }
+  }
+  return {success:false}
+}
 function buildNodeTree() {
   nodeTree = []
   nodeMap.clear()
@@ -56,8 +64,17 @@ function getCls(id: string): ClsRes{
     cls: cls
   }
 }
-function matchCls(file: midFile): ClsRes{
-  const cls = nodeTree.find((node) => node.search(file))
+const matchCls = (file: midFile): ClsRes=> {
+  let cls : TCls|undefined
+  const clsres = nodeTree.find((node) => {
+    const res = node.search(file)
+    devlog.loc('Match- settings function', 'single match res', res)
+    if (res.success) {
+      cls = res.cls
+    }
+    return res.success
+  })
+  devlog.loc('Match - settings function',"After Find", {cls, clsres, nodeTree, file})
   if (!cls) {
     return {
       success: false,
@@ -69,24 +86,28 @@ function matchCls(file: midFile): ClsRes{
   }
   return {
     success: true,
-    cls : cls.classification
+    cls : cls
   }
 }
 
 function updateMainSettings(newSettings:Partial<NoteClassifierSettings>) {
-  settings = { ...settings, ...newSettings }
+  settings = { ...settings, ...newSettings  }
   logger.debug("Updated Main Settings", )
 }
 function updateAllSettings(newSettings: Partial<NoteClassifierSettings>) {
-  settings = { ...settings, ...newSettings }
+  devlog.loc('Update all Settings', "Entry Value", { newSettings })
+  const rules = newSettings.rules instanceof Map ? newSettings.rules : new Map<string, FlatRule>(Object.entries(newSettings.rules ?? {}))
+  const classes = newSettings.classes instanceof Map? newSettings.classes:new Map<string,FlatCls>(Object.entries(newSettings.classes??{}))
+  settings = { ...settings, ...newSettings, rules, classes }
   buildClsMap()
   buildNodeTree()
 }
 function updateCls(newCls: FlatCls):UpdateClsRes {
-  settings.rules.set(newCls.id, newCls)
+  settings.classes.set(newCls.id, newCls)
   const cls = new Classification(newCls)
   clsMap.set(newCls.id, cls)
   buildNodeTree()
+  devlog.loc('UpdateCls',"Post save", {settings, flatCls:newCls, cls})
   return {success: true, cls:cls}
 }
 function newCls(parentID?: string): UpdateClsRes{
@@ -96,12 +117,12 @@ function newCls(parentID?: string): UpdateClsRes{
     id: id,
     ...parIdCheck,
     name: "New Classification",
-    rules: new Map<string, FlatRule>(),
+    rules: [],
     destination: "Set Destination",
     requriedProperties:[]
   } 
   
-  settings.rules.set(id, basicCls)
+  settings.classes.set(id, basicCls)
   const cls = new Classification(basicCls)
   clsMap.set(basicCls.id, cls)
   buildNodeTree()
@@ -122,4 +143,6 @@ export const settingUtil:SettingUtil = {
   newCls: newCls,
   nextID:nextID,
   rootNodes: getRootNodes, 
+  getFlatRule:getRule
 }
+

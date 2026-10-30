@@ -10,7 +10,7 @@ export interface TClsFile {
   classification: string,
   destination: string,
   reportFlags: ReportFlags[]
-  update:()=>updateRes , 
+  update:()=>Promise<updateRes> , 
 }
 export type midFile = {
   TFile: TFile,

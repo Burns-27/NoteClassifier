@@ -3,8 +3,8 @@ import { settingUtil } from "./settings/settingsUtil";
 
 
 
-function location(loc: string, message:string,  info: Record<string, unknown>) {
-  debug(`(${loc}) ${message}`, JSON.stringify(info, null, 2) )
+function location(loc: string, message?:string,  info?: Record<string, unknown>) {
+  debug(`(${loc}) ${message??''}`, info??{} )
 }
 function fallbackError(type: string, info: Record<string, unknown>) {
   debug(`(Fallback Error) ${type}`, JSON.stringify(info, null, 2))
@@ -15,7 +15,9 @@ const debug = (...args: unknown[]): void => {
     console.debug('[NCP]', ...args);
   }
 };
-
+const devErr = (loc: string, message?: string, info?: Record<string, unknown>) => {
+  debug(`ERROR (${loc}) ${message??''}`, info??{} )
+}
 function test(thing:string, ...args: unknown[]){
   return 
 }
@@ -23,6 +25,7 @@ export const devlog = {
   loc: location,
   fallback: fallbackError,
   test: test, 
+  err:devErr,
 }
 function errorNotice(thing: string, ...args: unknown[]) {
   if (settingUtil.get().ErrorNotice) {

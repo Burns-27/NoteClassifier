@@ -26,74 +26,59 @@ describe('Settings Unit Tests', () => {
 	});
 	describe('updateMain()', () => {
 		test('update main settings', () => {
-			settingUtil.updateMain({ createReports: true });
+			settingUtil.updateMain({ debug: true });
 			const updatedsets = settingUtil.get();
-			expect(updatedsets.createReports).toBe(true);
+			expect(updatedsets.debug).toBe(true);
 		});
 		test('updates main settings with out altering rules array', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] });
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			settingUtil.updateAll({ rules: rules });
 			settingUtil.updateMain({ debug: true });
 			const updatedSettings = settingUtil.get();
-			const rules = updatedSettings.rules;
+			const newRules = updatedSettings.rules;
 			expect(updatedSettings.debug).toBe(true);
-			expect(rules).toHaveLength(1);
-			if (rules.length == 1 && rules[0])
-				expect(rules[0].id).toBe(TestCls.media.flatCls.id);
+			expect(newRules.get('1')).toEqual(TestCls.media.flatCls)
 		});
-	});
+	})
 	describe('updateAll()', () => {
 		test('updates top level settings', () => {
 			settingUtil.updateAll({ debug: true });
 			expect(settingUtil.get().debug).toBe(true);
 		});
 		test('updates flat rules in settings', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] });
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			const updatedRules = settingUtil.get().rules;
-			expect(updatedRules).toHaveLength(1);
-			if (updatedRules.length == 1 && updatedRules[0]) {
-				expect(updatedRules[0].id).toBe(TestCls.media.flatCls.id);
-			}
+			expect(updatedRules.get('1')).toEqual(TestCls.media.flatCls)
 		});
 		test('populates clsMap', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] });
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			const getClsRes = settingUtil.getCls('1');
 			expect(getClsRes.success).toBe(true);
 		});
 		test('Rebuilds node tree', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] });
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			expect(settingUtil.rootNodes()).toHaveLength(1);
 		});
 	});
 	describe('updateCls()', () => {
-		const startingRule = { rules: [TestCls.media.flatCls] };
+		const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			
+
 		const updatedcls:FlatCls = {
-			id: '1',
-			name: 'New Media',
-			destination: 'media',
-			requriedProperties: [],
-	rules: [
-		{
-			id: '2',
-			type: 'property',
-			matchType: 'exact',
-			propertyName: 'categoty',
-			propertyValue: 'media',
-		},
-	],
+			...TestCls.media.flatCls,
+			name:"New Media"
 		};
-		test('Replace rule in flat rules', () => {
-			settingUtil.updateAll(startingRule)
-			settingUtil.updateCls(updatedcls)
-			const getFlatClsRes = settingUtil.getFlatCls("1")
-			expect(getFlatClsRes.success).toBe(true)
-			expect(settingUtil.get().rules).toHaveLength(1)
-			if (getFlatClsRes.success) {
-				expect(getFlatClsRes.cls.name).toBe("New Media")
-			}
-				
-		});
+		
 		test('update Cls in map', () => {
-			settingUtil.updateAll(startingRule)
+			settingUtil.updateAll({rules:rules})
 			settingUtil.updateCls(updatedcls)
 			const getClsRes = settingUtil.getCls("1")
 			expect(getClsRes.success).toBe(true)
@@ -102,7 +87,7 @@ describe('Settings Unit Tests', () => {
 			}
 		});
 		test('rebuild nodeTree', () => {
-			settingUtil.updateAll(startingRule)
+			settingUtil.updateAll({rules:rules})
 			settingUtil.updateCls(updatedcls)
 			const rootNodes = settingUtil.rootNodes()
 			expect(rootNodes).toHaveLength(1)
@@ -111,19 +96,13 @@ describe('Settings Unit Tests', () => {
 			}
 		});
 	});
-	describe('getFlatCls()', () => {
-		test('Returns Sucess/Flat class when ID exists', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] });
-			expect(settingUtil.getFlatCls('1').success).toBe(true);
-		});
-		test('Returns Fail when ID does not exist', () => {
-			expect(settingUtil.getFlatCls('5').success).toBe(false);
-		});
-	});
+	
 	describe('getCls()', () => {
-		const startingRule = { rules: [TestCls.media.flatCls] };
-		beforeEach(() => {
-			settingUtil.updateAll(startingRule)
+		const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			beforeEach(() => {
+			settingUtil.updateAll({ rules:rules});
+			
 		})
 		test('Returns Success/Cls instance when ID exists', () => {
 			const clsRes = settingUtil.getCls("1")
@@ -136,13 +115,19 @@ describe('Settings Unit Tests', () => {
 	});
 	describe('rootNodes()', () => {
 		test('Returns all nodes when no children', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls, TestCls.project.flatCls] })
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			rules.set(TestCls.project.flatCls.id, TestCls.project.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			const nodes = settingUtil.rootNodes()
 			expect(nodes).toHaveLength(2)
 		
 		});
 		test('Returns Only root node when there are children', () => {
-			settingUtil.updateAll({ rules: [TestCls.projectNotes.flatCls, TestCls.project.flatCls] })
+			const rules = new Map()
+			rules.set(TestCls.project.flatCls.id, TestCls.project.flatCls)
+			rules.set(TestCls.projectNotes.flatCls.id, TestCls.projectNotes.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			const nodes = settingUtil.rootNodes()
 			expect(nodes).toHaveLength(1)
 			if (nodes[0]) {
@@ -152,7 +137,9 @@ describe('Settings Unit Tests', () => {
 	});
 	describe('matchCls()', () => {
 		test('Return Matched Cls when file matches rule', () => {
-			settingUtil.updateAll({ rules: [TestCls.media.flatCls] })
+			const rules = new Map()
+			rules.set(TestCls.media.flatCls.id, TestCls.media.flatCls)
+			settingUtil.updateAll({ rules:rules});
 			const res = settingUtil.matchCls(TestFiles.media.midfile)
 			expect(res).toEqual(TestFiles.media.mockMatchRes)
 		});

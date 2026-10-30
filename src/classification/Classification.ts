@@ -1,11 +1,12 @@
 
 import { FlatCls, TCls } from "../types/classifications.types";
-import { TRule } from "../types/rules.types";
+import { FlatRule, TRule } from "../types/rules.types";
 import { RuleFactory } from "../Rules/RuleFactory";
 import { midFile } from "../types/files.types";
 import { settingUtil } from "../settings/settingsUtil";
 import { devlog } from "../logger";
 import { ClsPathRes, ClsPropsRes, ClsRes } from "../types/responses.types";
+import { SettingGroupItem } from "obsidian";
 
 export class Classification implements TCls{
   readonly id: string;
@@ -22,10 +23,14 @@ export class Classification implements TCls{
     this.name = data.name
     this.requriedProperties = data.requriedProperties
     this.destination = data.destination;
-    this.rules = RuleFactory(data.rules)
+    let rulesResArray = data.rules.map(r => settingUtil.getFlatRule(r))
+    const rulesResFiltered = rulesResArray.filter(r => r.success)
+    const rulesArray = rulesResFiltered.map(r => r.rule)
+    this.rules = RuleFactory(rulesArray)
   }
   match(file: midFile): ClsRes{
-    let match:boolean = true
+    let match: boolean = true
+    let res:ClsRes
     this.rules.forEach((rule) => {
       const check = rule.match(file)
       if (!check.success) {
@@ -33,15 +38,17 @@ export class Classification implements TCls{
       }
     })
     if (match) {
-      return {
+      res =  {
         success: true,
         cls:this
       }
     } else {
-      return {
+      res = {
         success:false,
       }
     }
+    devlog.loc('clsMatch', 'postRun', { res, match })
+    return res
   }
 
   //TODO Flesh out the get path method
@@ -52,17 +59,16 @@ export class Classification implements TCls{
     return desc.join("/n - ")
   }
   getPath(): ClsPathRes{
-    devlog.loc("Class Get Path","", {cls: this} )
     const clsDest = this.destination.split('/')
-    devlog.test("Original Destination Array", clsDest)
     let destinationArray: string[] = []
+    let Record:Record<string, unknown> ={cls: this, clsDest: [...clsDest] }
     if (clsDest[0] == "*") {
       const parentClsRes = this.getParent()
-      devlog.test("Parent Class Result", parentClsRes)
+      Record.ParentClsRes = parentClsRes
       if (parentClsRes.success) {
         const parentCls = parentClsRes.cls
         const parentClsPath = parentCls.getPath()
-        devlog.test("Parent Path Result", parentClsPath)
+        Record.ParentClsPathRes = parentClsPath
         if (parentClsPath.success) {
           destinationArray.push(...parentClsPath.path)
         } else {
@@ -74,7 +80,8 @@ export class Classification implements TCls{
       clsDest.shift()
     }
     destinationArray.push(...clsDest)
-    devlog.test("Destination Array Final", destinationArray)
+    Record.destinationArray = destinationArray
+    devlog.loc('Path - Cls Get',"Destination Array Final", Record)
     return {
       success: true,
       path: destinationArray
@@ -106,7 +113,20 @@ export class Classification implements TCls{
         message:"No Parent ID"
       }
     }
-  }
+ }
+  rulesSettingArray(openModal: (cls: TCls, rule: FlatRule) => void): {item:SettingGroupItem, id:string}[]{
+    let array: {item:SettingGroupItem, id:string}[] = []
+    this.rules.forEach((r) => {
+      array.push({
+        id: r.id, item: {
+          name: r.getDesc(),
+          action: () => openModal(this, r.flat)
+        }
+      })
+    })
+    devlog.loc('RulesSettingArray',"Before Return", {array})
+    return array
+  } ;
 }
 
 export class NodeClass {
@@ -116,17 +136,23 @@ export class NodeClass {
     this.classification = classification
   }
   search(file:midFile): ClsRes{
-    const res = this.classification.match(file)
-    if (!res.success) return res
+    let res = this.classification.match(file)
+    if (!res.success) {
+      devlog.loc('Match - Node Search',"Doesnt match this one",{res})
+      return res
+    }
     if (this.children.length == 0) {
+      devlog.loc('Match - Node Search',"Matches, No children", {res, childLength: this.children.length})
       return res
     }
     for (const child of this.children) {
       const deeperMatch = child.search(file)
       if (deeperMatch.success) {
-        return deeperMatch
+        devlog.loc('Match - Node Search', "Child Matches",{res, deeperMatch})
+        res = deeperMatch
       }
     }
+    devlog.loc('Match - Node Search', "Fallback", {res})
     return res
   }
 }
