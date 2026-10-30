@@ -1,10 +1,11 @@
 import { FlatCls } from "../../types/classifications.types";
 import { NoteClassifierSettings } from "../../types/settings.types";
-import { TestCls } from "./classifications.mocks";
+import { classes, Rules, TestCls } from "./classifications.mocks";
 const testRules = new Map<string, FlatCls>()
 testRules.set('1', TestCls.media.flatCls)
-export const oneclasspart: Partial<NoteClassifierSettings> =
+export const settingMocks: Partial<NoteClassifierSettings> =
 {
   debug: true,
-  rules: testRules
+  classes:classes,
+  rules:Rules
 }

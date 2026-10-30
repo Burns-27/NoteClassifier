@@ -16,7 +16,7 @@ const articleGuide: MockFile = new MockFile({
   name: 'Testing Guide',
   path: 'Testing Guide.md',
   cls: TestCls.articleGuide,
-  tags: ['guide'],
+  tags: ['#guide'],
   properties: { mediaType: 'article', category: 'media' },
   expectedPath:'Media/Article/Guides/Testing Guide.md'
 })
@@ -32,14 +32,14 @@ const Project: MockFile = new MockFile({
   name: "Sewing",
   path: "sewing/Sewing.md",
   cls: TestCls.project,
-  tags: ["project"],
+  tags: ["#project"],
   properties: { project: "Sewing" },
   expectedPath:'Sewing/Sewing.md'
 })
 const ProjectNotes: MockFile = new MockFile({
   name: "Bag Notes",
   path: "sewing/Bag Notes.md",
-  tags: ["project/notes"],
+  tags: ["#project/notes"],
   cls:TestCls.projectNotes, 
   properties: { project: "Sewing" },
   expectedPath:'Sewing/notes/BagNotes.md'
@@ -47,7 +47,7 @@ const ProjectNotes: MockFile = new MockFile({
 const generalNotes: MockFile = new MockFile({
   name: "General Notes",
   path: "General Notes.md",
-  tags: ["notes"],
+  tags: ["#notes"],
   cls:TestCls.generalNotes,
     properties:{ subject: 'Learning' },
   expectedPath:"Learning/notes/General Notes.md"

@@ -23,21 +23,22 @@ export class Classification implements TCls{
     this.name = data.name
     this.requriedProperties = data.requriedProperties
     this.destination = data.destination;
-    let rulesResArray = data.rules.map(r => settingUtil.getFlatRule(r))
+    let rulesResArray = data.rules.map((r) => {return settingUtil.getFlatRule(r)})
     const rulesResFiltered = rulesResArray.filter(r => r.success)
     const rulesArray = rulesResFiltered.map(r => r.rule)
     this.rules = RuleFactory(rulesArray)
   }
   match(file: midFile): ClsRes{
-    let match: boolean = true
-    let res:ClsRes
-    this.rules.forEach((rule) => {
+    let match: boolean[] = []
+    let rules:FlatRule[] = []
+    let res: ClsRes
+    for (const [_key, rule ]of this.rules) {
       const check = rule.match(file)
-      if (!check.success) {
-        match = false
-      }
-    })
-    if (match) {
+      rules.push(rule.flat)
+      match.push(check.success)
+    }
+    const matchsimplified = match.includes(false)
+    if (!matchsimplified) {
       res =  {
         success: true,
         cls:this
@@ -47,7 +48,7 @@ export class Classification implements TCls{
         success:false,
       }
     }
-    devlog.loc('clsMatch', 'postRun', { res, match })
+    devlog.loc('Match - clsMatch', 'postRun', { res, match, matchsimplified , rules})
     return res
   }
 

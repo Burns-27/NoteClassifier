@@ -54,7 +54,7 @@ class ExactTagRule implements TagRule{
       devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
       return res
       }
-    const check = file.tags.find((t) => t == this.tag) 
+    const check = file.tags.find((t) => t.replace("#",'') == this.tag) 
     if (!check) {
       const res:FailRes = { success: false, message: "File doesnt have matching tag", context: { fileTags: file.tags, expectedTag: this.tag } }
       devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
@@ -89,10 +89,11 @@ class IncludeTagRule implements TagRule {
       devlog.loc('Match - Include Tag Rule',"Tag Include Match Fail", res)
       return res
     }
-    const splitTags: string[] = []
+    let splitTags: string[] = []
     for (const tag of file.tags) {
       splitTags.push(...tag.split('/'))
     }
+    splitTags = splitTags.map((tag)=> tag.replace('#',""))
     const check = splitTags.find((t) => t == this.tag)
     if (!check) {
       const res: FailRes = {

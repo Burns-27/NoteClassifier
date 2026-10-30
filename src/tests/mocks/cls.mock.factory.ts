@@ -13,16 +13,13 @@ export type MockClsArg = {
 export class MockCls {
   level: 'Root' | 'Child'
   flatCls: FlatCls
-  cls: TCls
   expectedPath: string[]
   expectedProps: string[]
   mocPathRes: ClsPathRes
   mocPropsRes: ClsPropsRes
-  mocParentRes: ClsRes
   constructor(moc: MockClsArg) {
     this.level = moc.level
     this.flatCls = moc.flatCls
-    this.cls = new Classification(moc.flatCls)
     this.expectedPath = moc.expectedPath
       this.mocPathRes = {
         success: true,
@@ -33,15 +30,6 @@ export class MockCls {
       success: true,
       props:moc.expectedProps
     }
-    if (moc.parent) {
-      this.mocParentRes = {
-        success: true,
-        cls: moc.parent.cls
-      }
-    } else {
-      this.mocParentRes = {
-        success: false,
-      }
-    }
+    
   }
 }

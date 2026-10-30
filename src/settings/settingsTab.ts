@@ -112,19 +112,46 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						action:()=>{logger.debug('Create Report button Clicked')},
 					},
 			{
-				heading: "Notificaitons",
-				type: "group",
+				name: "Notificaitons and defaults",
+				type: "page",
+				desc:"Choose what notifications and default values are",
 				items: [
 					{
 						name: "Summary Notice",
-						desc:"Show Notice of how many files moved/audited post command",
-						control:{type:"toggle",key:"SummaryNotice"}
+						desc: "Show Notice of how many files moved/audited post command",
+						control: { type: "toggle", key: "SummaryNotice" }
 					},
 					{
 						name: "Error Notice",
 						desc: "Show notice when there a command is unable to be completed for a file",
-						control:{type:'toggle', key:'ErrorNotice'}
+						control: { type: 'toggle', key: 'ErrorNotice' }
+					},
+					{
+						name: "Notice Property",
+						desc: "the property used to indicate a file has errors",
+						control: { type: 'text', key: 'NoticeProperty' }
+					}, {
+						type: 'group',
+						heading: 'Path Fallback behavior',
+						desc: "When a destination uses a property value, you can provide a fallback value. The default fallback value is for when the file does not have the matching property, and no fallback behavior is set.",
+						items: [
+							{
+								name: "Flag For default",
+								desc: "Add a error flag to files that use the default fallback behavior",
+								control: { type: 'toggle', key: 'flagFallbackDefault' }
+							},
+							{
+								name: "Default Fallback Value",
+								desc: 'What will be used inplace of the property value',
+								control: {
+									key: 'pathFallbackDefault',
+									type: 'dropdown',
+									options: { Prop: 'The Property', Skip: 'Skip the folder' }
+								}
+							}
+						]
 					}
+
 				]
 			},
 			{

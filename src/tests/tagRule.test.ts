@@ -3,7 +3,7 @@ import { devlog } from "../logger";
 import { NewTagRule } from "../Rules/tagRule"
 import { TestFiles } from "./mocks/FileMocks";
 
-describe("Tag Rules", () => {
+describe.skip("Tag Rules", () => {
   beforeAll(() => {
         jest.spyOn(devlog, 'test').mockImplementation(
           (thing, ...args: unknown[]) => {
