@@ -1,7 +1,7 @@
 
 
 import { Classification } from "../classification/Classification"
-import { devlog } from "../logger"
+import { devlog } from "../tools/logger"
 import { settingUtil } from "../settings/settingsUtil"
 import { TestCls } from "./mocks/classifications.mocks"
 import { TestFiles } from "./mocks/FileMocks"

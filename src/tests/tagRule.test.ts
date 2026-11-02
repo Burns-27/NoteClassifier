@@ -1,16 +1,10 @@
 
-import { devlog } from "../logger";
+
 import { NewTagRule } from "../Rules/tagRule"
 import { TestFiles } from "./mocks/FileMocks";
 
 describe.skip("Tag Rules", () => {
-  beforeAll(() => {
-        jest.spyOn(devlog, 'test').mockImplementation(
-          (thing, ...args: unknown[]) => {
-            console.debug(`[${thing}]`, JSON.stringify(args, null, 2));
-          },
-        );
-      });
+
   describe("Exact Tag Rules", () => {
     const mockTagRule = NewTagRule({ id: '4', type: 'tag', matchType: 'exact', tag: 'project' })
     describe("Match()", () => {

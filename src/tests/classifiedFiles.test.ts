@@ -4,7 +4,7 @@ jest.mock('obsidian',()=> ({
 }))
 import { getAllTags, normalizePath } from 'obsidian';
 import { ClsFile } from '../classification/ClassifiedFile';
-import { devlog } from '../logger';
+import { devlog } from '../tools/logger';
 import { settingUtil } from '../settings/settingsUtil';
 import { appUtils } from '../tools/AppUtils';
 import { TestFiles } from './mocks/FileMocks';

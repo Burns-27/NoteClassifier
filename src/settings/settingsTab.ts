@@ -3,11 +3,11 @@ import NoteClassifier from '../main';
 import { NodeClass } from '../classification/Classification';
 import { settingUtil } from './settingsUtil';
 import {  FlatCls, TCls } from '../types/classifications.types';
-import { ClsModal } from './ClsModal';
-import { devlog, logger } from '../logger';
+import { ClsModal } from './Modals/ClsModal';
+import { devlog, logger } from '../tools/logger';
 import { FlatRule } from '../types/rules.types';
-import { RuleModal } from './rulesModal';
-import { NoteClassifierSettings, settingKeys } from '../types/settings.types';
+import { RuleModal } from './Modals/rulesModal';
+import { settingKeys } from '../types/settings.types';
 
 function getPath(path: string): unknown {
 	const pathArray = path.split('.')

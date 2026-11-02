@@ -1,6 +1,6 @@
 import { ButtonComponent, Modal, Setting, SettingGroup } from 'obsidian';
-import NoteClassifier from '../main';
-import { FlatCls, TCls } from '../types/classifications.types';
+import NoteClassifier from '../../main';
+import { FlatCls, TCls } from '../../types/classifications.types';
 
 export class ClsModal extends Modal {
 	flatCls: FlatCls;

@@ -5,23 +5,21 @@ import {
 import {
 	NoteClassifierSettingTab,
 } from './settings/settingsTab';
-import { NoteClassifierSettings } from './types/settings.types';
+import { NCPData } from './types/settings.types';
 import { settingUtil } from './settings/settingsUtil';
 import { appUtils } from './tools/AppUtils';
 import { ClsFile } from './classification/ClassifiedFile';
-import {  devlog, logger } from './logger';
+import {  debugLogArgs, devlog, logger } from './tools/logger';
 import { updateRes } from './types/responses.types';
 
 
 export default class NoteClassifier extends Plugin {
-	settings!: NoteClassifierSettings;
 	async onload() {
 		await this.loadSettings();
-		devlog.loc('Plugin Load')
+		devlog.loc({path:'Main', loc:'onLoad', msg:"Plugin Loaded", info:{}, extra:{}})
 		this.settings = settingUtil.get()
 		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
-		
 		this.addCommand({
 			id: `update-active-file`,
 			name: 'Update active file',
@@ -57,28 +55,36 @@ export default class NoteClassifier extends Plugin {
 				logger.sum(movedTotal, flaggedTotal)
 			}
 		})
-		
+		this.addCommand({
+			id: "dev-mode",
+			name:'Turn on/off dev mode logs', 
+			callback: () => {
+				const currentDev = settingUtil.get().dev
+				settingUtil.updateMain({dev:!currentDev})
+			}
+		})	
 	}
 	
 	onunload() {}
-	nextID(): number{
-		const nextID = this.settings.nextID
-		this.settings.nextID++
-		return nextID
-	}
 	
-	async updateFile(this:void,file:TFile, ):Promise<updateRes> {
+	async updateFile(this: void, file: TFile,): Promise<updateRes> {
+		let log = devlog.start('Main', 'updateFile')
+		log.extra.file = file
+		log.info.name = file.basename
 		const clsFile = ClsFile.create(file)
-		devlog.loc('updateFile','post cls file create',{clsFile})
+		log.info.clsFile = clsFile
 		if (clsFile.success) {
-			const res =  await clsFile.note.update()
+			const res = await clsFile.note.update()
+			log.info.updateRes = res
+			devlog.log(log)
 			return res
 		} else {
-			logger.err("Unable to classifiy file.", clsFile)
+			log.msg = 'Unable to classifiy File'
 			let fm: Record<string, unknown> = {}
 			fm[settingUtil.get().NoticeProperty] = ['Unable to Classify']
-			appUtils.processFrontmater(file, fm)
-			return{success:false}
+			await appUtils.processFrontmater(file, fm)
+			devlog.log(log)
+			return {success:false}
 		}
 	}
 
@@ -86,15 +92,21 @@ export default class NoteClassifier extends Plugin {
 		const settings = settingUtil.get()
 		const rules = Object.fromEntries(settings.rules)
 		const classes = Object.fromEntries(settings.classes)
-		devlog.loc('Save Settings', 'called', { settings })
-		console.debug("Save settings called")
-		await this.saveData({...settings,rules, classes});
+		const reqProps = Object.fromEntries(settings.reqProps)
+		let log:debugLogArgs= {
+			path: "Settings",
+			loc: 'Save',
+			msg:'', 
+			info: { settings, rules, classes, reqProps },
+			extra:{}
+		}
+		devlog.log(log)
+		await this.saveData({...settings,rules, classes, reqProps});
 	}
 	async loadSettings() {
-		const data = await this.loadData() as Partial<NoteClassifierSettings>;
-		console.debug("Load settings Called")
-		
+
+		const data = await this.loadData() as Partial<NCPData>;
 		settingUtil.updateAll(data)
-		devlog.loc('loadSettings','Called',{data})
+		devlog.loc({path:'Settings', loc:'loadSettings', info:{data}, extra:{}, msg:""})
 	}
 }

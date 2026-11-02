@@ -8,8 +8,10 @@ import { midFile, ReportFlags, TClsFile } from '../types/files.types';
 import { TCls } from '../types/classifications.types';
 import { settingUtil } from '../settings/settingsUtil';
 import { appUtils } from '../tools/AppUtils';
-import { FailRes, NoteClsRes, updateRes } from '../types/responses.types';
-import { devlog } from '../logger';
+import { NoteClsRes, updateRes } from '../types/responses.types';
+import {  devlog } from '../tools/logger';
+
+
 
 export class ClsFile implements TClsFile {
 	readonly TFile: TFile;
@@ -49,14 +51,14 @@ export class ClsFile implements TClsFile {
 		this.validateProperties();
 	}
 	static create(file: TFile): NoteClsRes {
+		let log = devlog.start('Main', 'Create ClsFile');
+		log.info.file = file;
 		const cache = appUtils.getFileCache(file);
+		log.extra.cache = cache;
 		if (!cache) {
-			const res: FailRes = {
-				success: false,
-				message: 'No Metadata found',
-			};
-			devlog.test('Create Cls File fail', res);
-			return res;
+			log.msg = 'No Cache on file';
+			devlog.log(log);
+			return { success: false, message: 'No Cache' };
 		}
 		const tags = getAllTags(cache);
 		const matchRes = settingUtil.matchCls({
@@ -64,116 +66,116 @@ export class ClsFile implements TClsFile {
 			metadataCache: cache,
 			tags: tags,
 		});
-		devlog.loc('*Create File', 'post match res', { matchRes, tags, cache });
-		if (!matchRes.success) return matchRes;
+		log.info.matchRes = matchRes;
+		if (!matchRes.success) {
+			log.msg = 'No matching Cls';
+			devlog.log(log);
+			return matchRes;
+		}
 		const cls = new ClsFile(
 			{ TFile: file, metadataCache: cache, tags: tags },
 			matchRes.cls,
 		);
+		log.msg = 'Cls made';
+		log.extra.classifiedFile = cls;
+		devlog.log(log);
 		return {
 			success: true,
 			note: cls,
 		};
 	}
 	getDestination(): { destination: string; folderArray: string[] } {
-		let Record: Record<string, unknown> = {};
-		let props: string[] = [];
+		let log = devlog.start('Move', 'File Get Destination');
 		const clsDest = this.cls.getPath();
-		Record.clsDest = clsDest;
+		log.extra['Class Destination'] = clsDest;
 		let destArray: string[] = [];
+		let fallbackFlag:boolean = false
 		if (!clsDest.success) {
-			devlog.err(
-				'Path - Note getDest',
-				'Getting Cls Destination Array',
-				Record,
-			);
+			log.msg = 'Error Retrieving Class Destination';
+			devlog.err(log, clsDest);
 			return { destination: this.startPath, folderArray: [] };
 		}
-		clsDest.path.forEach((section) => {
-			if (!(section.startsWith('[') && section.endsWith(']'))) {
-				destArray.push(section);
-				return;
+		log.extra.props = {}
+		for (const section of  clsDest.path) {
+			const res = this.pathSection(section)
+			log.extra[section] = res
+			if (res.fallbackFlag) {
+				fallbackFlag = true
 			}
-			let value: string = '';
-			const fallback = '|';
-			const prop = section.slice(1, -1);
-			let fallbackflag = false;
-			props.push(prop);
-			// Checks for Fm, that it has the prop, and that the props value is a string
-			// if not, triggers the flag for fall back
-			if (
-				!this.frontmatter ||
-				!this.frontmatter[prop] ||
-				typeof this.frontmatter[prop] != 'string'
-			) {
-				fallbackflag = true;
-			} else {
-				value = this.frontmatter[prop];
-			}
-			//checks if it needs the fallback value
-			if (fallbackflag) {
-				//checks if there is a fall back value
-				if (prop.includes(fallback) && !prop.endsWith(fallback)) {
-					//Retrieves the fall back value and pushes that.
-					const splitProp = prop.slice(
-						prop.indexOf(fallback) + fallback.length,
-					);
-					value = splitProp;
-				} else {
-					//if there isnt a fall back, checks the settings for what to default to
-					if (settingUtil.get().pathFallbackDefault == 'Prop') {
-						value = prop;
-					}
-					//dont need to check for skip. value is default '', which after normalizePath resolves the same.
-					if (settingUtil.get().flagFallbackDefault) {
-						this.reportFlags.push('Missing Properties for path');
-					}
-				}
-			}
-			destArray.push(value)
-			return;
-		});
+			destArray.push(res.value)
+		}
+		if (fallbackFlag && settingUtil.base.flagFallbackDefault) {
+			this.reportFlags.push('Missing Properties for path')
+		}
 		const folderArray = [...destArray];
-		Record.folderArray = folderArray;
 		destArray.push(this.TFile.name);
-		Record.destArray = destArray;
 		const destination = normalizePath(destArray.join('/'));
-		Record.destination = destination;
-		devlog.loc('Path - Note Get Dest', 'Before Return', Record);
+		log.info.destination = destination
+		log.extra.destArray = destArray
+		log.extra.folderArray = folderArray
+		devlog.loc(log);
 		return { destination, folderArray };
 	}
 	validateProperties() {
+		let log = devlog.start('Props', 'Validate Props')
 		const propsRes = this.cls.getProps();
-		if (!propsRes.success || propsRes.props.length == 0) {
-			devlog.loc('Properties - validate','No required props');
+		if (!propsRes.success) {
+			log.msg = 'no Props from cls'
+			log.info.propRes = propsRes
+			devlog.log(log)
 			return;
 		}
 		const props = propsRes.props;
-		let flag: boolean = false;
+		log.extra.props = props
+		let missingflag: boolean = false;
+		let missingProps:string[] = []
+		let wrongflag:boolean = false
 		if (this.frontmatter !== undefined) {
-			props.forEach((p) => {
-				if (
-					this.frontmatter &&
-					(!this.frontmatter[p] || this.frontmatter[p] == undefined)
-				) {
-					this.newFrontmatter[p] = '';
-					flag = true;
+			for (const [key, prop] of props) {
+				const res = prop.check(this)
+				log.extra[key] = res
+				if (!res.check) {
+					switch (res.type) {
+						case 'opt':
+							wrongflag = true
+							break
+						case 'has':
+							missingflag = true
+							missingProps.push(res.prop)
+							break
+					}
 				}
-			});
-		} else {
-			props.forEach((p) => {
-				this.newFrontmatter[p] = '0';
-			});
-			flag = true;
-		}
-		if (flag) {
+			}
+		} 
+		if (missingflag) {
 			this.reportFlags.push('Missing Required Properties');
+			if (settingUtil.base.addMissingProps) {
+				for (const prop of missingProps) {
+					this.newFrontmatter[prop] = ''
+				}
+			}
 		}
+		if (wrongflag) {
+			this.reportFlags.push('One or More Properties has Incorrect Value')
+		}
+		log.info.missingflag = missingflag
+		log.info.missingProps = missingProps
+		log.info.wrongflag = wrongflag
+		devlog.log(log)
 	}
 
 	async update(): Promise<updateRes> {
+		let log = devlog.start('Main', 'Update')
+		log.extra = {
+			newFM: this.newFrontmatter, 
+			ogFm: this.frontmatter,
+			flags:this.reportFlags, 
+		}
 		let moved = false;
 		let flagged = false;
+		if (this.reportFlags && this.reportFlags.length !== 0) {
+			flagged = true
+		}
 		await appUtils.processFrontmater(
 			this.TFile,
 			this.newFrontmatter,
@@ -187,14 +189,72 @@ export class ClsFile implements TClsFile {
 			);
 			moved = true;
 		}
-
-		devlog.loc('Update', 'After Process', {
-			moved,
-			flagged,
-			oldFrontmatter: this.frontmatter,
-			newFM: this.newFrontmatter,
-			ReportFlags: this.reportFlags,
-		});
+		log.info.moved = moved
+		log.info.flagged = flagged
+		devlog.log(log);
 		return { success: true, moved: moved, flagged: flagged };
+	}
+	getPropValue(prop: string): string | false {
+		if (this.frontmatter && this.frontmatter[prop] && typeof this.frontmatter[prop] == 'string') {
+				return this.frontmatter[prop]
+			}
+				else return false
+	}
+	private pathSection(section: string): {
+		value: string;
+		section: string;
+		isProp: boolean;
+		prop: string;
+		hasfallback: boolean;
+		fallback: string,
+		fallbackFlag:boolean
+	} {
+		// Check for Prop
+		let res = {
+			section,
+			value: section,
+			isProp: false,
+			prop: '',
+			hasfallback: false,
+			fallback: '',
+			fallbackFlag:false
+		};
+		if (!(section.startsWith('[') && section.endsWith(']'))) {
+			return res;
+		}
+		// Check For Fall back
+		res.isProp = true;
+		const prop = section.slice(1, -1);
+		res.prop = prop;
+		if (prop.includes('|') && !prop.endsWith('|')) {
+			const propSplit = prop.split('|');
+			if (propSplit.length == 1 && propSplit[0]) {
+				res.hasfallback = false
+				res.prop = propSplit[0]
+			}
+			if (propSplit.length == 2 && propSplit[0] && propSplit[1]) {
+				res.hasfallback = true
+				res.prop = propSplit[0]
+				res.fallback = propSplit[1]
+			}
+		}
+		const value = this.getPropValue(res.prop)
+		if (value) {
+			res.value = value
+			return res
+		}
+		if (res.hasfallback) {
+			res.value = res.fallback
+			return res
+		} else {
+			res.fallbackFlag = true
+			if (settingUtil.base.pathFallbackDefault == "Prop") {
+				res.value = res.prop
+			}
+			if (settingUtil.base.pathFallbackDefault == "Skip") {
+				res.value = ""
+			}
+			return res
+		}
 	}
 }

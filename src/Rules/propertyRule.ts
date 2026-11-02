@@ -1,5 +1,5 @@
 
-import { devlog } from "../logger"
+import { devlog } from "../tools/logger"
 import { midFile } from "../types/files.types"
 import {  RuleMatchRes } from "../types/responses.types"
 import { Rule } from "../types/rules.types"

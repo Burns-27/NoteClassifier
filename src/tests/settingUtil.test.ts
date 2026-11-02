@@ -1,4 +1,4 @@
-import { devlog } from '../logger';
+import { devlog } from '../tools/logger';
 import { FlatCls } from '../types/classifications.types';
 import { DEFAULT_SETTINGS } from '../types/settings.types';
 import { Rules, TestCls } from './mocks/classifications.mocks';
