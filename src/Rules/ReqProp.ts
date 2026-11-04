@@ -1,35 +1,43 @@
 import { settingUtil } from "../settings/settingsUtil";
 import { type TClsFile } from "../types/files.types";
 import { PropCheckRes } from "../types/responses.types";
-import { FlatReqPropHas, FlatReqPropOptions, TReqProp } from "../types/rules.types";
+import { FlatReqProp, FlatReqPropHas, FlatReqPropOptions, TReqProp } from "../types/rules.types";
 
-export function reqPropFactory(idArray: string[]): Map<string, TReqProp> {
+export function reqPropFactory(idArray: string[], clsName:string): Map<string, TReqProp> {
   let map = new Map<string, TReqProp>()
   for (const id of idArray) {
     const flatReqPropRes = settingUtil.getFlatReqProp(id)
     if (flatReqPropRes.success) {
       const flatReqProp = flatReqPropRes.prop
-      switch (flatReqProp.type) {
-        case "one of":
-          map.set(flatReqProp.id, new ReqPropOptions(flatReqProp))
-          break
-        case "exists":
-          map.set(flatReqProp.id, new ReqPropHas(flatReqProp))
-          break
-      }
+      map.set(id, ReqProp.Create(flatReqProp, clsName))
     }
   }
   return map
 }
-
-class ReqPropHas implements TReqProp {
+abstract class ReqProp {
   public id: string
+  abstract flat: FlatReqProp
+  public propName: string
+  public clsName: string
+  constructor(data: FlatReqProp, clsName: string) {
+    this.clsName = clsName
+    this.id = data.id
+    this.propName = data.propertyName
+  }
+  static Create(flat: FlatReqProp, clsName: string): TReqProp{
+    switch (flat.type) {
+      case "opt":
+        return new ReqPropOptions(flat, clsName)
+      case "exists":
+        return new ReqPropHas(flat,clsName)
+    }
+  }
+}
+class ReqPropHas extends ReqProp implements TReqProp {
   public flat: FlatReqPropHas
-  private propName: string
-  constructor(data: FlatReqPropHas) {
-    this.id=  data.id
+  constructor(data: FlatReqPropHas, clsName:string) {
+    super(data, clsName)
     this.flat = data
-    this.propName= data.propertyName
   }
   getDesc(): string{
     return `File has ${this.propName} property, and it is not empty`
@@ -52,8 +60,10 @@ class ReqPropOptions implements TReqProp {
   public flat: FlatReqPropOptions
   private propName: string
   private propValueOptions: string[]
-  constructor(data: FlatReqPropOptions) {
+  public clsName: string; 
+  constructor(data: FlatReqPropOptions, clsName:string) {
     this.id = data.id
+    this.clsName = clsName
     this.flat = data
     this.propName = data.propertyName
     this.propValueOptions = data.propVauleOptions

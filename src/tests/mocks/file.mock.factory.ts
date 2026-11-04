@@ -1,16 +1,12 @@
 import { CachedMetadata, TFile } from "obsidian"
-import { TCls } from "../../types/classifications.types"
-import { midFile, TClsFile } from "../../types/files.types"
-import { MockCls } from "./cls.mock.factory"
-import { ClsRes } from "../../types/responses.types"
-import { mock } from "node:test"
-
-
+import { midFile } from "../../types/files.types"
+import { FlatCls } from "../../types/classifications.types"
+import { clsMap } from "./classifications.mocks"
 
 type MockFileArgs = {
   name: string,
   path:string,
-  cls: MockCls,
+  cls: string,
   tags: string[],
   properties: Record<string, unknown>,
   expectedPath:string,
@@ -19,11 +15,10 @@ type MockFileArgs = {
 export class MockFile {
   expectedClsName: string
   expectedPath: string
-  expectedProperties: string[]
   file: TFile
   metadataCache: CachedMetadata
   tags: string[]
-  mockCls: MockCls
+  flatCls: FlatCls
   midfile: midFile
   constructor(moc:MockFileArgs) {
     this.file = {
@@ -32,20 +27,17 @@ export class MockFile {
       extension: ".md",
       path:moc.path
     } as unknown as TFile
-    this.mockCls = moc.cls
-    this.expectedClsName = moc.cls.flatCls.name
+    this.flatCls = clsMap.get(moc.cls)!
+    this.expectedClsName = this.flatCls.name
     this.metadataCache = {
-      frontmatter: {...moc.properties, saftey:'yes'},
-      
+      frontmatter: {...moc.properties, saftey:'yes'}
     }
     this.tags = moc.tags
-    
     this.midfile = {
       TFile: this.file,
       metadataCache: this.metadataCache,
       tags:moc.tags
     }
     this.expectedPath = moc.expectedPath
-    this.expectedProperties = moc.cls.expectedProps
   }
 }

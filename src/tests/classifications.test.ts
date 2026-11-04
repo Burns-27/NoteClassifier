@@ -1,24 +1,15 @@
 
 
 import { Classification } from "../classification/Classification"
-import { devlog } from "../tools/logger"
 import { settingUtil } from "../settings/settingsUtil"
-import { TestCls } from "./mocks/classifications.mocks"
+import { classes, Rules, TestCls } from "./mocks/classifications.mocks"
 import { TestFiles } from "./mocks/FileMocks"
 import { settingMocks } from "./mocks/setting.mocks"
 describe.skip("Classification", () => {
   beforeAll(() => {
-    jest.spyOn(devlog, "test").mockImplementation((thing, ...args: unknown[]) => {
-      console.debug(`[${thing}]`, JSON.stringify(args, null, 2))
-    })
-    jest.spyOn(devlog, 'loc').mockImplementation((loc, message?, info?) => {
-      if (loc.startsWith("*")) {
-        console.debug(`[Test](${loc})${message ?? ""}`, info ?? "")
-        
-      }
-    }
-  )
     settingUtil.updateAll(settingMocks)
+    settingUtil.get().classes = classes
+    settingUtil.get().rules = Rules
   })
 
   describe("match()", () => {

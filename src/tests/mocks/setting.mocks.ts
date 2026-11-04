@@ -1,11 +1,14 @@
-import { FlatCls } from "../../types/classifications.types";
-import { NoteClassifierSettings } from "../../types/settings.types";
-import { classes, Rules, TestCls } from "./classifications.mocks";
-const testRules = new Map<string, FlatCls>()
-testRules.set('1', TestCls.media.flatCls)
-export const settingMocks: Partial<NoteClassifierSettings> =
+
+
+import { NCPData, } from "../../types/settings.types";
+import { clsData,  } from "./classifications.mocks";
+import { reqPropData } from "./reqprops.mocks";
+import { rulesData } from "./rule.mocks";
+
+export const settingMocks: Partial<NCPData> =
 {
   debug: true,
-  classes:classes,
-  rules:Rules
+  rules: rulesData,
+  classes: clsData,
+  reqProps:reqPropData
 }

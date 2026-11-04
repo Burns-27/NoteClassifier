@@ -4,34 +4,22 @@ jest.mock('obsidian',()=> ({
 }))
 import { getAllTags, normalizePath } from 'obsidian';
 import { ClsFile } from '../classification/ClassifiedFile';
-import { devlog } from '../tools/logger';
+import { debugLogArgs, devlog } from '../tools/logger';
 import { settingUtil } from '../settings/settingsUtil';
 import { appUtils } from '../tools/AppUtils';
 import { TestFiles } from './mocks/FileMocks';
 import { settingMocks } from './mocks/setting.mocks';
 
 describe.skip('ClsFile', () => {
-	let log:Record<string, unknown> ={}
+	let log:debugLogArgs[]= []
 	beforeAll(() => {
-		
-		/*jest.spyOn(devlog, 'test').mockImplementation(
-			(thing, ...args: unknown[]) => {
-				console.debug(`[${thing}]`, JSON.stringify(args, null, 2));
-			},
-		);
-		jest.spyOn(devlog, "fallback").mockImplementation((type: string, info: Record<string, unknown>) => {
-			console.debug(type, info)
-		})*/
-		jest.spyOn(devlog, 'loc').mockImplementation((loc, message?, info?) => {
-			if (loc.startsWith("*")) {
-				
-				log[loc] = {message, info:JSON.stringify(info, null, 2)}
-			}
+		jest.spyOn(devlog, 'loc').mockImplementation((loc) => {
+				log.push(loc)
     }
   )
 	})
 	beforeEach(() => {
-		log = {}
+		log = []
 	})
 	describe('Static Create()', () => {
 			beforeEach(() => {
@@ -40,7 +28,7 @@ describe.skip('ClsFile', () => {
 			});
 
 		test('Creates TClsFile when matching class ', () => {
-			log.test = "ClsFile - Static Create - Returns success "
+			console.debug("ClsFile - Static Create - Returns success ")
 			const file = TestFiles.media;
 			jest.spyOn(appUtils, 'getFileCache').mockReturnValue(
 				file.metadataCache,
@@ -55,7 +43,7 @@ describe.skip('ClsFile', () => {
 			}
 		});
 		test('Returns fail when no match', () => {
-			log.test = "ClsFile - Static Create - Returns Fail w/no Match"
+			console.debug("ClsFile - Static Create - Returns Fail w/no Match")
 			const file = TestFiles.media
 			jest.spyOn(appUtils, "getFileCache").mockReturnValue(file.metadataCache);
 			(getAllTags as jest.Mock).mockReturnValue(file.tags);
@@ -64,7 +52,7 @@ describe.skip('ClsFile', () => {
 			expect(clsNote.success).toBe(false)
 		});
 		test('Returns fail when no metadata', () => {
-			log.test = "ClsFile - Static Create - Returns Fail w/no Metadata"
+			console.debug("ClsFile - Static Create - Returns Fail w/no Metadata")
 			const file = TestFiles.media
 			jest.spyOn(appUtils, "getFileCache").mockReturnValue(null)
 			const clsNote = ClsFile.create(file.file)
@@ -79,12 +67,9 @@ describe.skip('ClsFile', () => {
 				settingUtil.updateAll(settingMocks)
 			});
 			test("When basic Path", () => {
-				log.test = "ClsFile - Creates Destination String - When Basic Path"
+				console.debug("ClsFile - Creates Destination String - When Basic Path") 
 				const file = TestFiles.media;
-				log.file = {
-					metadata: file.metadataCache.frontmatter,
-					tags:file.tags,
-				}
+				
 			jest.spyOn(appUtils, 'getFileCache').mockReturnValue(
 				file.metadataCache,
 			);
@@ -93,46 +78,38 @@ describe.skip('ClsFile', () => {
 				(normalizePath as jest.Mock).mockImplementation((input: string) => input);
 				const clsNote = ClsFile.create(file.file);
 
-				log.noteRes = clsNote
+			
 				expect(clsNote.success).toBe(true)
 				if (clsNote.success) {
 					expect(clsNote.note.destination).toEqual(file.expectedPath)
 				}
 			})
 			test("When Made from Property Value", () => {
-				log.test = "ClsFile - Creates Destination String - When made from Property Value"
+				console.debug("ClsFile - Creates Destination String - When made from Property Value")
 				const file = TestFiles.project;
-				log.file = {
-					metadata: file.metadataCache.frontmatter,
-					tags:file.tags,
-				}
+				
 			jest.spyOn(appUtils, 'getFileCache').mockReturnValue(
 				file.metadataCache,
 			);
 				(getAllTags as jest.Mock).mockReturnValue(file.tags);
 				(normalizePath as jest.Mock).mockImplementation((input: string) => input);
 				const clsNote = ClsFile.create(file.file);
-				log.clsNote = clsNote
+				
 				expect(clsNote.success).toBe(true)
 				if (clsNote.success) {
 					expect(clsNote.note.destination).toEqual(file.expectedPath)
 				}
 			})
 			test("When Nested with Parent Cls", () => {
-				
-log.test = "ClsFile - Creates Destination String - When Nested with parent Class"
+				console.debug("ClsFile - Creates Destination String - When Nested with parent Class")
 				const file = TestFiles.articleGuide;
-				log.file = {
-					metadata: file.metadataCache.frontmatter,
-					tags:file.tags,
-				}
 				jest.spyOn(appUtils, 'getFileCache').mockReturnValue(
 					file.metadataCache,
 				);
 				(getAllTags as jest.Mock).mockReturnValue(file.tags);
 				(normalizePath as jest.Mock).mockImplementation((input: string) => input);
 				const clsNote = ClsFile.create(file.file);
-				log.clsNote = clsNote
+				
 				expect(clsNote.success).toBe(true)
 				if (clsNote.success) {
 					expect(clsNote.note.destination).toEqual(file.expectedPath)

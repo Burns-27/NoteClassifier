@@ -1,13 +1,15 @@
 
 import { FlatCls, TCls } from "../types/classifications.types";
 import { FlatReqProp, FlatRule, TReqProp, TRule } from "../types/rules.types";
-import { RuleFactory } from "../Rules/RuleFactory";
+import { RuleFactory } from "../Rules/Rules";
 import { midFile } from "../types/files.types";
 import { settingUtil } from "../settings/settingsUtil";
 import { debugLogArgs, devlog } from "../tools/logger";
 import { ClsPathRes, ClsPropsRes, ClsRes } from "../types/responses.types";
-import { SettingGroupItem } from "obsidian";
-import { reqPropFactory } from "../Rules/reqPropRule";
+import { SettingDefinitionList} from "obsidian";
+import { reqPropFactory } from "../Rules/ReqProp";
+
+import { modalManager } from "../tools/modalManager";
 
 export class Classification implements TCls{
   readonly id: string;
@@ -22,12 +24,9 @@ export class Classification implements TCls{
     this.flat = data
     this.parentID = data.parentID
     this.name = data.name
-    this.requriedProperties = reqPropFactory(data.requriedProperties)
+    this.requriedProperties = reqPropFactory(data.requriedProperties, this.name)
     this.destination = data.destination;
-    let rulesResArray = data.rules.map((r) => {return settingUtil.getFlatRule(r)})
-    const rulesResFiltered = rulesResArray.filter(r => r.success)
-    const rulesArray = rulesResFiltered.map(r => r.rule)
-    this.rules = RuleFactory(rulesArray)
+    this.rules = RuleFactory(data.rules, this.name)
   }
   match(file: midFile): ClsRes{
     let log = devlog.start('Classify', 'Cls Match')
@@ -56,7 +55,6 @@ export class Classification implements TCls{
     devlog.loc(log)
     return res
   }
-
   getPath(): ClsPathRes{
     let log = devlog.start('Move', 'Cls Get Path')
     log.extra.cls = this
@@ -122,30 +120,97 @@ export class Classification implements TCls{
       }
     }
   }
-  rulesSettingArray(openModal: (cls: TCls, rule: FlatRule) => void): {item:SettingGroupItem, id:string}[]{
-    let array: {item:SettingGroupItem, id:string}[] = []
-    this.rules.forEach((r) => {
-      array.push({
-        id: r.id, item: {
-          name: r.getDesc(),
-          action: () => openModal(this, r.flat)
-        }
-      })
-    })
-    return array
+  getSettings(update:(cls:TCls)=>void): SettingDefinitionList[]{
+    return [this.rulesSetting(update), this.parentPropertiesSettings(), this.propSetting(update)]
   };
-  propSettingArray(openModal: (cls: TCls, prop: FlatReqProp) => void): { item: SettingGroupItem, id: string }[]{
-    let array: { item: SettingGroupItem, id: string }[] = []
-    this.requriedProperties.forEach((p) => {
-      array.push({
-        id: p.id,
-        item: {
-          name: p.getDesc(),
-          action:()=>openModal(this, p.flat)
+  private rulesSetting(update:(cls:TCls)=>void):SettingDefinitionList{
+    let array: TRule[] = []
+    this.rules.forEach((r)=>array.push(r))
+    return {
+      heading: "Rules",
+      type: 'list',
+      emptyState: "Add a rule to match notes to this classificaiton",
+      addItem: {
+        name: 'add rule',
+        action: () => {
+          const rule = this.addRule()
+          modalManager.RulesModal(this, rule)
         }
-      })
-    })
-    return array
+      },
+      onDelete: (index) => {
+        const ruleId = array[index]?.id ?? 'err'
+        this.flat.rules = this.flat.rules.filter((r) => r !== ruleId)
+        settingUtil.get().reqProps.delete(ruleId)
+        update(this)
+      },
+      items:array.map((r)=>({name:r.getDesc(), action:()=>{modalManager.RulesModal(this, r.flat)}}))
+    }
+  };
+  private parentPropertiesSettings(): SettingDefinitionList{
+    let parent = this.getParent()
+    let propArray: Array<TReqProp> = []
+    if (parent.success) {
+      const parentPropsRes = parent.cls.getProps()
+      if (parentPropsRes.success) {
+        parentPropsRes.props.forEach((p)=>propArray.push(p))
+      }
+    }
+    return {
+      heading: 'Properties Required from Parent Classifications',
+      type: 'list',
+      emptyState: 'No properties Required From Parent Classifications',
+      items: propArray.map((p)=>({name:p.getDesc(), desc:`From:${p.clsName}`}))
+    }
+  }
+  private propSetting(update:(cls:TCls)=>void): SettingDefinitionList{
+    let propertyArray: Array<TReqProp> = []
+    this.requriedProperties.forEach((p) => propertyArray.push(p))
+    return {
+      heading: "Required Properties",
+      type: 'list',
+      emptyState: "This Classificaiton has no property requirements",
+      addItem: {
+        name: 'add property',
+        action: () => { 
+          const prop = this.addReqProp()
+          modalManager.ReqPropModal(this, prop)
+         } 
+      },
+      onDelete: (index) => {
+        const propId = propertyArray[index]?.id ?? 'err'
+        this.flat.requriedProperties = this.flat.requriedProperties.filter(p => p !== propId)
+        settingUtil.get().reqProps.delete(propId)
+        update(this)
+      },
+      items:propertyArray.map((p)=>({name:p.getDesc(), action:()=>{modalManager.ReqPropModal(this, p.flat)}}))
+    }
+    
+  }
+  private addRule():FlatRule {
+    const id = settingUtil.nextID()
+    let rule: FlatRule = {
+      type: 'property',
+      matchType: "exact",
+      propertyName: "",
+      propertyValue: "",
+      id:id
+    }
+    this.flat.rules.push(id)
+    settingUtil.get().rules.set(id, rule)
+    this.rules = RuleFactory(this.flat.rules, this.name)
+    return rule
+  }
+  private addReqProp(): FlatReqProp{
+    const id = settingUtil.nextID()
+    let prop: FlatReqProp = {
+      id,
+      type: 'exists',
+      propertyName:''
+    }
+    this.flat.requriedProperties.push(id)
+    settingUtil.get().reqProps.set(id, prop)
+    this.requriedProperties = reqPropFactory(this.flat.requriedProperties, this.name)
+    return prop
   }
 }
 

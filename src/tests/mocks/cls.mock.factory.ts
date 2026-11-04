@@ -1,13 +1,12 @@
-import { Classification } from "../../classification/Classification"
-import type { FlatCls, TCls } from "../../types/classifications.types"
-import type {  ClsPathRes, ClsPropsRes, ClsRes } from "../../types/responses.types"
+
+import type { FlatCls, } from "../../types/classifications.types"
+import type {  ClsPathRes,  } from "../../types/responses.types"
 
 export type MockClsArg = {
   flatCls: FlatCls,
   expectedPath: string[],
   expectedProps: string[],
   level: 'Root' | 'Child',
-  parent?: MockCls
 }
 
 export class MockCls {
@@ -16,7 +15,6 @@ export class MockCls {
   expectedPath: string[]
   expectedProps: string[]
   mocPathRes: ClsPathRes
-  mocPropsRes: ClsPropsRes
   constructor(moc: MockClsArg) {
     this.level = moc.level
     this.flatCls = moc.flatCls
@@ -26,10 +24,5 @@ export class MockCls {
         path:moc.expectedPath
       }
     this.expectedProps = moc.expectedProps
-    this.mocPropsRes = {
-      success: true,
-      props:moc.expectedProps
-    }
-    
   }
 }

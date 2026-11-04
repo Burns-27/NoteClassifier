@@ -27,7 +27,7 @@ function buildClsMap(){
     return
   })
 }
-function getRule(id: string):flatRuleRes{
+function getRule(id: string): flatRuleRes {
   const rule = rulesMap.get(id)
   if (rule) {
     return {
@@ -35,7 +35,7 @@ function getRule(id: string):flatRuleRes{
       rule
     }
   }
-  return {success:false}
+  return { success: false }
 }
 function getReqProp(id: string):flatPropRes{
   const reqProp = reqPropsMap.get(id)
@@ -192,7 +192,7 @@ function nextID(): string{
 }
 export const settingUtil:SettingUtil = {
   get: getSettings,
-  base:baseSettings, 
+  base: baseSettings, 
   getCls: getCls,
   updateMain: updateMainSettings,
   updateAll: updateAllSettings,

@@ -1,12 +1,12 @@
 
 
-import { NewTagRule } from "../Rules/tagRule"
+import { Rule } from "../Rules/Rules";
 import { TestFiles } from "./mocks/FileMocks";
 
 describe.skip("Tag Rules", () => {
 
   describe("Exact Tag Rules", () => {
-    const mockTagRule = NewTagRule({ id: '4', type: 'tag', matchType: 'exact', tag: 'project' })
+    const mockTagRule = Rule.Create({ id: '4', type: 'tag', matchType: 'exact', tag: 'project' },"Project")
     describe("Match()", () => {
       test("Matches successfully", () => {
       })
@@ -21,7 +21,7 @@ describe.skip("Tag Rules", () => {
     })
   })
   describe("Include Tag Rules", () => {
-    const mockTagRule = NewTagRule({ id: '6', type: 'tag', matchType: 'include', tag: 'notes' })
+    const mockTagRule = Rule.Create({ id: '6', type: 'tag', matchType: 'include', tag: 'notes' }, "Notes")
     test("Matches single tag", () => {
       const res = mockTagRule.match(TestFiles.generalNotes.midfile)
       expect(res.success).toBe(true)
