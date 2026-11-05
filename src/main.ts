@@ -24,8 +24,10 @@ export default class NoteClassifier extends Plugin {
 			id: `update-active-file`,
 			name: 'Update active file',
 			callback: async () => {
+				console.debug("Update Active File Command Triggered")
 				const file = this.app.workspace.getActiveFile()
 				if (file) {
+					console.debug(`Updating File: ${file.basename}`)
 				  await this.updateFile(file)
 				}
 			}

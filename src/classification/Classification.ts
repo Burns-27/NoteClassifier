@@ -1,15 +1,11 @@
-
-import { FlatCls, TCls } from "../types/classifications.types";
-import { FlatReqProp, FlatRule, TReqProp, TRule } from "../types/rules.types";
-import { RuleFactory } from "../Rules/Rules";
-import { midFile } from "../types/files.types";
+import { SettingDefinitionList } from "obsidian";
+import { reqPropFactory } from "../ReqProps/factory";
+import { RuleFactory } from "../Rules/Factory";
 import { settingUtil } from "../settings/settingsUtil";
-import { debugLogArgs, devlog } from "../tools/logger";
-import { ClsPathRes, ClsPropsRes, ClsRes } from "../types/responses.types";
-import { SettingDefinitionList} from "obsidian";
-import { reqPropFactory } from "../Rules/ReqProp";
-
+import { devlog, debugLogArgs } from "../tools/logger";
 import { modalManager } from "../tools/modalManager";
+import { TRule, TReqProp, midFile, ClsRes, FlatRule, ClsPathRes, ClsPropsRes, FlatReqProp } from "../types";
+import { TCls, FlatCls } from "../types/classifications.types";
 
 export class Classification implements TCls{
   readonly id: string;

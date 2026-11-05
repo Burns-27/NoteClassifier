@@ -1,6 +1,6 @@
 
 
-import { NCPData, } from "../../types/settings.types";
+import { NCPData, } from "../../src/types/settings.types";
 import { clsData,  } from "./classifications.mocks";
 import { reqPropData } from "./reqprops.mocks";
 import { rulesData } from "./rule.mocks";

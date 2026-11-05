@@ -17,5 +17,5 @@
 		"lib": ["ES2021", "DOM"],
 		"types":["node", "jest"]
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*.ts", "__mocks__/**/*.ts", "tests/**/*.ts"],
 }

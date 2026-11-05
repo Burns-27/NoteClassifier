@@ -1,4 +1,4 @@
-import { FlatRule } from '../../types/rules.types';
+import { FlatRule } from '../../src/types/rules.types';
 
 export const rulesData: Record<string, FlatRule> = {
 	'2': {

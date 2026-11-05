@@ -1,10 +1,10 @@
 
 
-import { Rule } from "../Rules/Rules"
+import { CreateRule } from "../src/Rules/Factory"
 import { TestFiles } from "./mocks/FileMocks"
 
 describe.skip("Property Rules", () => {
-  const mockPropertyRule = Rule.Create({
+  const mockPropertyRule = CreateRule({
 			id: '2',
 			type: 'property',
 			matchType: 'exact',

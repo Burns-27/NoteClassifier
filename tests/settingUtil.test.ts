@@ -1,15 +1,17 @@
-import { FlatCls } from '../types/classifications.types';
+import { FlatCls } from '../src/types/classifications.types';
 
 import { TestFiles } from './mocks/FileMocks';
 import { settingMocks } from './mocks/setting.mocks';
+jest.mocked('obsidian')
 
 describe('Settings Unit Tests', () => {
-	let settingUtil: typeof import('../settings/settingsUtil').settingUtil;
+	let settingUtil: typeof import('../src/settings/settingsUtil').settingUtil;
 
 	beforeEach(async () => {
 		jest.resetModules();
-		const module = await import('../settings/settingsUtil');
+		const module = await import('../src/settings/settingsUtil');
 		settingUtil = module.settingUtil;
+		
 	});
 
 	describe('updateMain()', () => {
@@ -95,6 +97,9 @@ describe('Settings Unit Tests', () => {
 		});
 	});
 	describe('rootNodes()', () => {
+		beforeEach(() => {
+			settingUtil.updateAll(settingMocks);
+		});
 		test('Returns all nodes when no children', () => {
 			const nodes = settingUtil.rootNodes();
 			expect(nodes).toHaveLength(3);

@@ -130,9 +130,9 @@ function objToMap<T>(obj: Record<string, T> | undefined): Map<string, T>{
 function updateAllSettings(newSettings: Partial<NCPData>) {
   let log: debugLogArgs = devlog.start('Settings', 'Update All')
   log.extra.startData = newSettings
-  rulesMap = objToMap<FlatRule>(newSettings.rules)
-  const classes = objToMap<FlatCls>(newSettings.classes)
-  reqPropsMap = objToMap<FlatReqProp>(newSettings.reqProps)
+  rulesMap = objToMap<FlatRule>(newSettings?.rules??{})
+  const classes = objToMap<FlatCls>(newSettings?.classes??{})
+  reqPropsMap = objToMap<FlatReqProp>(newSettings?.reqProps??{})
   log.extra.settingMaps = {
     rulesMap, classes, reqPropsMap
   }
