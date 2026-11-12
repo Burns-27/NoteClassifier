@@ -1,0 +1,48 @@
+name: Tag Release on Merge
+
+on: 
+  push:
+    branches:
+      - main
+
+jobs:
+  bump-and-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Verify Versions match and Read version
+        id: get-version
+        run: |
+          PKG_VER=$(node -p "require('./package.json').version")
+          MANIFEST_VER=$(node -p "require('./manifest.json').version")
+          
+          if [ "$PKG_VER" != "$MANIFEST_VER" ]; then
+            echo "Error: package.json ($PKG_VER) and manifest.json ($MANIFEST_VER) do not match!"
+            exit 1
+          end
+          
+          echo "Versions match: $PKG_VER"
+          echo "version=$PKG_VER" >> $GITHUB_OUTPUT
+
+      - name: Create and Push Git Tag
+        run: |
+          VERSION="${{ steps.get-version.outputs.version }}"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Check if the tag already exists to prevent duplicate failures
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists."
+          else
+            # Obsidian expects an annotated tag matching the version exactly
+            git tag -a "$VERSION" -m "Release $VERSION"
+            git push origin "$VERSION"
+          fi
+          
+        
