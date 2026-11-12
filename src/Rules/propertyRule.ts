@@ -1,3 +1,4 @@
+import { getPropertyStringValue } from '../tools/propertyUtils';
 import { midFile } from '../types/files.types';
 import { RuleMatchRes } from '../types/responses.types';
 import { FlatExactPropertyRule } from '../types/rules.types';
@@ -18,19 +19,14 @@ export class ExactPropertyRule extends Rule {
 	}
 	match(file: midFile): RuleMatchRes {
 		const frontmatter = file.metadataCache.frontmatter;
-		if (!frontmatter) {
+		const value = getPropertyStringValue(this.propertyName, frontmatter)
+		if (!value) {
 			return {
 				success: false,
-				message: 'No Frontmatter on file',
-			};
+				message:'file does not have property'
+			}
 		}
-		if (!frontmatter[this.propertyName]) {
-			return {
-				success: false,
-				message: 'Property doesnt Exist on file',
-			};
-		}
-		if (frontmatter[this.propertyName] !== this.propertyValue) {
+		if (value !== this.propertyValue) {
 			return {
 				success: false,
 				message: 'Property Value doesnt Match',

@@ -114,6 +114,17 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				},
 			},
 			{
+				name: 'Add Classification Prop',
+				desc: 'When on, NCP will add a property with the classification name to a updated file',
+				control:{key:'addClassificationProp', type:'toggle'}
+			},
+			{
+				name: 'Classification Property',
+				desc: 'The name of the property NCP will use for classificaiton',
+				visible: ()=>settingUtil.get().addClassificationProp,
+				control:{key:'classificationProp', type:'text'}
+			},
+			{
 				name: 'Notificaitons and defaults',
 				type: 'page',
 				desc: 'Choose what notifications and default values are',
@@ -132,6 +143,11 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						name: 'Notice Property',
 						desc: 'the property used to indicate a file has errors',
 						control: { type: 'text', key: 'NoticeProperty' },
+					},
+					{
+						name: 'Add Mising Properties',
+						desc: 'When on, NCP will automatically add missing properties to note',
+						control:{type:'toggle', key:'addMissingProps'}
 					},
 					{
 						type: 'group',

@@ -80,7 +80,9 @@ export default class NoteClassifier extends Plugin {
 			log.info.updateRes = res
 			devlog.log(log)
 			return res
-		} else {
+		} else if(clsFile.message == "ignored file"){
+			return { success: false}
+		}else{
 			log.msg = 'Unable to classifiy File'
 			let fm: Record<string, unknown> = {}
 			fm[settingUtil.get().NoticeProperty] = ['Unable to Classify']

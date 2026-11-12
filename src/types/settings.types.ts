@@ -22,6 +22,8 @@ export type BaseNCPSettings = {
   ignoredFolders: string[];
   ignoreFilesProperty: string;
 	addMissingProps: boolean;
+	classificationProp: string;
+	addClassificationProp: boolean;
 }
 export type NCPData = {
   rules:Record<string, FlatRule>,
@@ -36,7 +38,7 @@ export type settingKeys =
 	| 'NoticeProperty'
 	| 'debug' |'dev'
 	| 'ignoredFolders'
-	| 'ignoreFilesProperty';
+	| 'ignoreFilesProperty'|'addMissingProps'|'classificationProp'|'addClassificationProp';
 
 export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
 	nextID: 1,
@@ -49,7 +51,9 @@ export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
 	pathFallbackDefault: 'Skip',
 	ignoredFolders: [],
 	ignoreFilesProperty: 'NCP_Ignore',
-	addMissingProps:false,
+	addMissingProps: false,
+	addClassificationProp: true,
+	classificationProp:'NC_Class',
 };
 
 export interface SettingUtil {

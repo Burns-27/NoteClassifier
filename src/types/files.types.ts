@@ -1,17 +1,14 @@
-import { CachedMetadata, FrontMatterCache, TFile } from "obsidian";
+import { CachedMetadata, TFile } from "obsidian";
 import { updateRes } from "./responses.types";
 
 export interface TClsFile {
   readonly TFile: TFile, 
   readonly startPath:string, 
   name: string,
-  frontmatter?: FrontMatterCache
-  tags?: Array<string>,
   classification: string,
   destination: string,
   reportFlags: ReportFlags[],
   update: () => Promise<updateRes>, 
-  getPropValue:(prop:string)=>string|false
 }
 export type midFile = {
   TFile: TFile,

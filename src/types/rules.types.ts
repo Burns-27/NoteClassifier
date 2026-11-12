@@ -1,4 +1,5 @@
-import { midFile, TClsFile } from "./files.types"
+import { FrontMatterCache } from "obsidian"
+import { midFile } from "./files.types"
 import { PropCheckRes, RuleMatchRes } from "./responses.types"
 export type FlatRule = FlatTagRule | FlatPropertyRule
 
@@ -56,6 +57,6 @@ export interface TReqProp {
   id: string, 
   flat: FlatReqProp,
   clsName:string
-  check: (note:TClsFile) => PropCheckRes,
+  check: (fm:FrontMatterCache) => PropCheckRes,
   getDesc:()=>string, 
 }

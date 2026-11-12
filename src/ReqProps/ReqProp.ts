@@ -1,3 +1,4 @@
+import { FrontMatterCache } from 'obsidian';
 import { FlatReqProp, PropCheckRes, TClsFile, TReqProp } from '../types';
 
 export abstract class ReqProp implements TReqProp {
@@ -11,5 +12,5 @@ export abstract class ReqProp implements TReqProp {
 		this.propName = data.propertyName;
 	}
 	abstract getDesc(): string;
-	abstract check(note: TClsFile): PropCheckRes;
+	abstract check(fm:FrontMatterCache): PropCheckRes;
 }
