@@ -24,8 +24,10 @@ export default class NoteClassifier extends Plugin {
 			id: `update-active-file`,
 			name: 'Update active file',
 			callback: async () => {
+				console.debug("Update Active File Command Triggered")
 				const file = this.app.workspace.getActiveFile()
 				if (file) {
+					console.debug(`Updating File: ${file.basename}`)
 				  await this.updateFile(file)
 				}
 			}
@@ -78,7 +80,9 @@ export default class NoteClassifier extends Plugin {
 			log.info.updateRes = res
 			devlog.log(log)
 			return res
-		} else {
+		} else if(clsFile.message == "ignored file"){
+			return { success: false}
+		}else{
 			log.msg = 'Unable to classifiy File'
 			let fm: Record<string, unknown> = {}
 			fm[settingUtil.get().NoticeProperty] = ['Unable to Classify']

@@ -1,4 +1,4 @@
-import { FlatCls } from '../../types/classifications.types';
+import { FlatCls } from '../../src/types/classifications.types';
 export const clsData = {
 	"1":{
 		id: '1',

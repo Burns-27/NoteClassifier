@@ -1,12 +1,9 @@
-jest.mock('obsidian',()=> ({
-	getAllTags: jest.fn(),
-	normalizePath:jest.fn()
-}))
+jest.mocked('obsidian')
 import { getAllTags, normalizePath } from 'obsidian';
-import { ClsFile } from '../classification/ClassifiedFile';
-import { debugLogArgs, devlog } from '../tools/logger';
-import { settingUtil } from '../settings/settingsUtil';
-import { appUtils } from '../tools/AppUtils';
+import { ClsFile } from '../src/classification/ClassifiedFile';
+import { debugLogArgs, devlog } from '../src/tools/logger';
+import { settingUtil } from '../src/settings/settingsUtil';
+import { appUtils } from '../src/tools/AppUtils';
 import { TestFiles } from './mocks/FileMocks';
 import { settingMocks } from './mocks/setting.mocks';
 

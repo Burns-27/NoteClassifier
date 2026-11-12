@@ -1,4 +1,4 @@
-import { FlatReqProp } from "../../types/rules.types";
+import { FlatReqProp } from "../../src/types/rules.types";
 
 export const reqPropData: Record<string, FlatReqProp> = {
   "20": { type: 'exists', propertyName: 'project', id: '20' },

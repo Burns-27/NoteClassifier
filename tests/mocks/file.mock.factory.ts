@@ -1,6 +1,6 @@
 import { CachedMetadata, TFile } from "obsidian"
-import { midFile } from "../../types/files.types"
-import { FlatCls } from "../../types/classifications.types"
+import { midFile } from "../../src/types/files.types"
+import { FlatCls } from "../../src/types/classifications.types"
 import { clsMap } from "./classifications.mocks"
 
 type MockFileArgs = {
