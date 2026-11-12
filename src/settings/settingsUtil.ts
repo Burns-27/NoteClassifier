@@ -1,16 +1,19 @@
 import { Classification, NodeClass } from "../classification/Classification";
-import { devlog, logger } from "../logger";
+import { debugLogArgs, devlog } from "../tools/logger";
 import { FlatCls, TCls } from "../types/classifications.types";
 import type { midFile } from "../types/files.types";
-import type {  ClsRes,  flatRuleRes,  UpdateClsRes } from "../types/responses.types";
-import { FlatRule } from "../types/rules.types";
-import { DEFAULT_SETTINGS, NoteClassifierSettings, SettingUtil } from "../types/settings.types";
+import type {  ClsRes,  flatPropRes,  flatRuleRes,  UpdateClsRes } from "../types/responses.types";
+import { FlatReqProp, FlatRule } from "../types/rules.types";
+import { DEFAULT_BASE_SETTINGS,type  BaseNCPSettings, NCPData, NCPSettings, SettingUtil } from "../types/settings.types";
 
-let settings: NoteClassifierSettings = { ...DEFAULT_SETTINGS }
+let settings: NCPSettings = {...DEFAULT_BASE_SETTINGS, rules: new Map<string, FlatRule>(), classes: new Map<string, FlatCls>(), reqProps: new Map<string, FlatReqProp>()}
+let baseSettings:BaseNCPSettings = {...DEFAULT_BASE_SETTINGS}
+let rulesMap: Map<string, FlatRule> = new Map()
+let reqPropsMap : Map<string, FlatReqProp> = new Map()
 let nodeMap:Map<string, NodeClass>= new Map()
 let clsMap: Map<string, TCls> = new Map()
 let nodeTree: Array<NodeClass> = []
-const getSettings = (): NoteClassifierSettings => {
+const getSettings = (): NCPSettings => {
   return settings
 }
 const getRootNodes = (): Array<NodeClass> => {
@@ -24,12 +27,22 @@ function buildClsMap(){
     return
   })
 }
-function getRule(id: string):flatRuleRes{
-  const rule = settings.rules.get(id)
+function getRule(id: string): flatRuleRes {
+  const rule = rulesMap.get(id)
   if (rule) {
     return {
       success: true,
       rule
+    }
+  }
+  return { success: false }
+}
+function getReqProp(id: string):flatPropRes{
+  const reqProp = reqPropsMap.get(id)
+  if (reqProp) {
+    return {
+      success: true,
+      prop:reqProp
     }
   }
   return {success:false}
@@ -64,17 +77,24 @@ function getCls(id: string): ClsRes{
     cls: cls
   }
 }
-const matchCls = (file: midFile): ClsRes=> {
+const matchCls = (file: midFile): ClsRes => {
+  let log: debugLogArgs = devlog.start('Classify', 'matchCls')
+  log.info.file = file
   let cls : TCls|undefined
   const clsres = nodeTree.find((node) => {
     const res = node.search(file)
-    devlog.loc('Match- settings function', 'single match res', res)
+    log.msg = 'Single Match Res'
+    log.info.res = res
+    devlog.loc(log)
     if (res.success) {
       cls = res.cls
     }
     return res.success
   })
-  devlog.loc('Match - settings function',"After Find", {cls, clsres, nodeTree, file})
+  log.msg = 'After Find'
+  log.info.cls = cls
+  log.extra = {clsres, nodeMap}
+  devlog.log(log)
   if (!cls) {
     return {
       success: false,
@@ -90,27 +110,56 @@ const matchCls = (file: midFile): ClsRes=> {
   }
 }
 
-function updateMainSettings(newSettings:Partial<NoteClassifierSettings>) {
-  settings = { ...settings, ...newSettings  }
-  logger.debug("Updated Main Settings", )
+function updateMainSettings(newSettings: Partial<BaseNCPSettings>) {
+  let log: debugLogArgs = devlog.start('Settings', 'update Base')
+  log.info.new = newSettings
+  log.info.old = { ...baseSettings }
+  settings = { ...settings, ...newSettings }
+  baseSettings = { ...baseSettings, ...newSettings }
+  log.extra = {settings, baseSettings}
+  devlog.loc(log)
 }
-function updateAllSettings(newSettings: Partial<NoteClassifierSettings>) {
-  devlog.loc('Update all Settings', "Entry Value", { newSettings })
-  const rules = newSettings.rules instanceof Map ? newSettings.rules : new Map<string, FlatRule>(Object.entries(newSettings.rules ?? {}))
-  const classes = newSettings.classes instanceof Map? newSettings.classes:new Map<string,FlatCls>(Object.entries(newSettings.classes??{}))
-  settings = { ...settings, ...newSettings, rules, classes }
+function objToMap<T>(obj: Record<string, T> | undefined): Map<string, T>{
+  if (obj) {
+    const map = new Map<string, T>(Object.entries(obj))
+    return map
+  } else {
+    return new Map<string, T>()
+  }
+}
+function updateAllSettings(newSettings: Partial<NCPData>) {
+  let log: debugLogArgs = devlog.start('Settings', 'Update All')
+  log.extra.startData = newSettings
+  rulesMap = objToMap<FlatRule>(newSettings?.rules??{})
+  const classes = objToMap<FlatCls>(newSettings?.classes??{})
+  reqPropsMap = objToMap<FlatReqProp>(newSettings?.reqProps??{})
+  log.extra.settingMaps = {
+    rulesMap, classes, reqPropsMap
+  }
+  settings = { ...settings, ...newSettings, rules:rulesMap, classes:classes, reqProps:reqPropsMap }
   buildClsMap()
   buildNodeTree()
+  log.extra.mapsAndTree = {
+    clsMap, nodeMap, nodeTree
+  }
+  log.info.settings = settings
+  devlog.log(log)
 }
-function updateCls(newCls: FlatCls):UpdateClsRes {
+function updateCls(newCls: FlatCls): UpdateClsRes {
+  let log: debugLogArgs = devlog.start('Settings', 'Update Cls')
+  log.info.updated = newCls
   settings.classes.set(newCls.id, newCls)
   const cls = new Classification(newCls)
   clsMap.set(newCls.id, cls)
+  log.extra.clsobj = cls
   buildNodeTree()
-  devlog.loc('UpdateCls',"Post save", {settings, flatCls:newCls, cls})
+  log.extra.mapsAndTree = {clsMap, nodeMap, nodeTree}
+  devlog.log(log)
   return {success: true, cls:cls}
 }
 function newCls(parentID?: string): UpdateClsRes{
+  let log: debugLogArgs = devlog.start('Settings', 'New Cls')
+  log.info.parentID = parentID??"No Parent"
   const parIdCheck = parentID ? { parentID: parentID } : {}
   const id = `${nextID()}`
   const basicCls: FlatCls = {
@@ -121,11 +170,19 @@ function newCls(parentID?: string): UpdateClsRes{
     destination: "Set Destination",
     requriedProperties:[]
   } 
-  
+  log.extra.newFlat = basicCls
   settings.classes.set(id, basicCls)
   const cls = new Classification(basicCls)
   clsMap.set(basicCls.id, cls)
+  
   buildNodeTree()
+  log.extra.mapsAndTree = {
+    flatClasses: settings.classes,
+    clsMap,
+    nodeMap,
+    nodeTree
+  }
+  devlog.log(log)
   return {success:true, cls:cls}
 }
 function nextID(): string{
@@ -135,6 +192,7 @@ function nextID(): string{
 }
 export const settingUtil:SettingUtil = {
   get: getSettings,
+  base: baseSettings, 
   getCls: getCls,
   updateMain: updateMainSettings,
   updateAll: updateAllSettings,
@@ -143,6 +201,7 @@ export const settingUtil:SettingUtil = {
   newCls: newCls,
   nextID:nextID,
   rootNodes: getRootNodes, 
-  getFlatRule:getRule
+  getFlatRule: getRule,
+  getFlatReqProp:getReqProp
 }
 

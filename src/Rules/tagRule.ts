@@ -1,63 +1,32 @@
 
-import { devlog } from "../logger"
-import { midFile } from "../types/files.types"
-import { FailRes, RuleMatchRes } from "../types/responses.types"
-import { Rule } from "../types/rules.types"
+
+import type { midFile } from "../types/files.types"
+import type { FailRes, RuleMatchRes } from "../types/responses.types"
+import type { FlatExactTagRule, FlatIncludeTagRule } from "../types/rules.types"
+import { Rule } from "./Rules"
 
 
-export interface TagRule extends Rule{
-  readonly type:"tag"
-  readonly matchType: "includes" | "exact",
-  tag: string,
-}
 
-type FlatExactTagRule = {
-  type: "tag",
-  id:string,
-  matchType: "exact",
-  tag: string,
-}
-type FlatIncludeTagRule = {
-  type: "tag",
-  id:string, 
-  matchType: "include",
-  tag: string,
-}
-export type FlatTagRule = FlatExactTagRule | FlatIncludeTagRule
-export function NewTagRule(rule: FlatTagRule): TagRule{
-  switch (rule.matchType) {
-    case "exact":
-      return new ExactTagRule(rule)
-    case "include":
-      return new IncludeTagRule(rule)
-  }
-}
-class ExactTagRule implements TagRule{
-  readonly type = "tag"
-  readonly matchType = "exact";
+
+export class ExactTagRule extends Rule {
   tag: string
-  id: string
   flat:FlatExactTagRule
-  constructor(data: FlatExactTagRule) {
+  constructor(data: FlatExactTagRule, clsName: string) {
+    super(data, clsName)
     this.tag = data.tag
-    this.id = data.id
     this.flat = data
   }
-
   match(file: midFile): RuleMatchRes{
-    devlog.loc('Match - Exact Tag Rule', 'Begining',{tag:this.tag, file})
-    if (!file.tags || file.tags.length == 0) {
+   if (!file.tags || file.tags.length == 0) {
       const res: FailRes = {
         success: false,
         message:"File Has no tags"
       }
-      devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
       return res
       }
     const check = file.tags.find((t) => t.replace("#",'') == this.tag) 
     if (!check) {
       const res:FailRes = { success: false, message: "File doesnt have matching tag", context: { fileTags: file.tags, expectedTag: this.tag } }
-      devlog.loc('Match - Exact Tag Rule',"Tag Exact Match Fail", res)
       return res
     }
     return {
@@ -69,15 +38,12 @@ class ExactTagRule implements TagRule{
   }
 }
 
-class IncludeTagRule implements TagRule {
-  readonly type = "tag"
-  readonly matchType = "includes";
+export class IncludeTagRule extends Rule  {
   tag: string
-  id: string
   flat:FlatIncludeTagRule
-  constructor(data: FlatIncludeTagRule) {
+  constructor(data: FlatIncludeTagRule, clsName: string) {
+    super(data, clsName)
     this.tag = data.tag
-    this.id = data.id
     this.flat = data
   }
   match(file: midFile): RuleMatchRes{
@@ -86,7 +52,6 @@ class IncludeTagRule implements TagRule {
         success: false,
         message:"File has No Tags"
       }
-      devlog.loc('Match - Include Tag Rule',"Tag Include Match Fail", res)
       return res
     }
     let splitTags: string[] = []
@@ -105,7 +70,6 @@ class IncludeTagRule implements TagRule {
           goalTag:this.tag,
         }
       }
-      devlog.loc('Match - Include Tag Rule',"No matching tag", res)
       return res
     }
     return {

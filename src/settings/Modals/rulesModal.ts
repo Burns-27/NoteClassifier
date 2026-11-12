@@ -1,6 +1,6 @@
 import { Modal, Notice, Setting } from "obsidian";
-import NoteClassifier from "../main";
-import { FlatRule } from "../types/rules.types";
+import NoteClassifier from "../../main";
+import { FlatRule } from "../../types/rules.types";
 
 export class RuleModal extends Modal{
   rule: FlatRule

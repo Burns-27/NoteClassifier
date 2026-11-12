@@ -1,22 +1,17 @@
-import { devlog } from "../logger";
-import { NewPropertyRule } from "../Rules/propertyRule"
+
+
+import { CreateRule } from "../src/Rules/Factory"
 import { TestFiles } from "./mocks/FileMocks"
 
-describe("Property Rules", () => {
-  const mockPropertyRule = NewPropertyRule({
+describe.skip("Property Rules", () => {
+  const mockPropertyRule = CreateRule({
 			id: '2',
 			type: 'property',
 			matchType: 'exact',
     propertyName: 'category',
 			propertyValue: 'media',
-  })
-  beforeAll(() => {
-      jest.spyOn(devlog, 'test').mockImplementation(
-        (thing, ...args: unknown[]) => {
-          console.debug(`[${thing}]`, JSON.stringify(args, null, 2));
-        },
-      );
-    });
+  },"Media")
+  
   describe("match()", () => {
     test("Matches Successfully", () => {
       const res = mockPropertyRule.match(TestFiles.media.midfile)

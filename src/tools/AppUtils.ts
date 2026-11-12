@@ -1,5 +1,5 @@
 import { App, CachedMetadata, getAllTags, normalizePath, TFile } from "obsidian";
-import { devlog, logger } from "../logger";
+import { devlog, logger } from "./logger";
 import { settingUtil } from "../settings/settingsUtil";
 
 export class AppUtils {
@@ -23,7 +23,10 @@ export class AppUtils {
     return getAllTags(cache)
   }
   public async processFrontmater(file: TFile, newFM: Record<string, unknown>, flags?:string[]) {
-     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+    let log = devlog.start('Main', 'process Frontmatter')
+    log.info.newFM = newFM
+    log.info.flags = flags
+    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       try {
         Object.assign(frontmatter, newFM)
         if (flags && flags.length !== 0) {
@@ -34,24 +37,34 @@ export class AppUtils {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- frontmatter is weird (And any by default)
           delete frontmatter[settingUtil.get().NoticeProperty]
         }
-        devlog.loc('Update',"Frontmatter post update", {frontmatter:{...frontmatter}})
+        log.info.fm = { ...frontmatter }
+        
+        devlog.loc(log)
       } catch (e) {
         console.debug(e)
       }
     })
   }
   public async moveFile(file: TFile, destination: string, folderArray: string[]) {
+    let log = devlog.start('Move', "Move File")
+    log.info.destination = destination
+    log.info.folderArray = folderArray
+    let madeFilesArray:string[]=[]
     let path: string = ''
     for( let folder of folderArray){
       path = path ? `${path}/${folder}` : folder
-      const check = this.app.vault.getFolderByPath(path)
+      const check = this.app.vault.getFolderByPath(normalizePath(path))
       if (!check) {
+          madeFilesArray.push(path)
           await this.app.vault.createFolder(normalizePath(path))
       }
     }
+    log.extra.madeFiles = madeFilesArray
+    log.extra.createdPath = path
     const check = this.app.vault.getFolderByPath(path)
-    devlog.loc('MoveFile', 'Right before move', { file, destination, path, check })
-     this.app.fileManager.renameFile(file, destination).catch((e)=>logger.debug(e))
+    log.extra.destinationFileExists = !!check
+    devlog.loc(log)
+    this.app.fileManager.renameFile(file, destination).catch((e)=>logger.debug(e))
   }
 }
 
