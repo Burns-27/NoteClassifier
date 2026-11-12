@@ -25,7 +25,7 @@ jobs:
           if [ "$PKG_VER" != "$MANIFEST_VER" ]; then
             echo "Error: package.json ($PKG_VER) and manifest.json ($MANIFEST_VER) do not match!"
             exit 1
-          end
+          
           
           echo "Versions match: $PKG_VER"
           echo "version=$PKG_VER" >> $GITHUB_OUTPUT
