@@ -1,18 +1,22 @@
-import { SettingDefinitionList, SettingGroupItem } from "obsidian";
+
 import type { midFile } from "./files.types";
-import type { ClsPathRes, ClsPropsRes, ClsRes } from "./responses.types";
-import { TRule } from "./rules.types";
+import type { ClsRes } from "./responses.types";
+import { FlatReqProp, FlatRule, TReqProp, TRule } from "./rules.types";
 
 export interface TCls {
   readonly id: string;
   readonly parentID?: string | null;
   readonly name: string;
+  reqProps: Map<string, TReqProp>
+  allReqProps: Map<string, TReqProp>;
+  parentReqProps: Map<string, TReqProp>;
   rules: Map<string, TRule>, 
-  getPath: () => ClsPathRes,
+  path: string[],
+  parent:TCls|false
   match: (file: midFile) => ClsRes,
-  getProps: () => ClsPropsRes, 
   flat: FlatCls
-  getSettings:(update:(cls:TCls)=>void)=>SettingDefinitionList[]
+  addRule: () => FlatRule
+  addReqProp:()=>FlatReqProp
 }
 
 export type FlatCls = {

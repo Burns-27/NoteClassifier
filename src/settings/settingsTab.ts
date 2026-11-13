@@ -1,105 +1,23 @@
 import {
-	App,
+	type App,
 	PluginSettingTab,
-	SettingDefinitionItem,
-	SettingGroupItem,
+	type SettingDefinitionItem,
 } from 'obsidian';
 import NoteClassifier from '../main';
-import { NodeClass } from '../classification/Classification';
-import { settingUtil } from './settingsUtil';
-import { FlatCls, TCls } from '../types/classifications.types';
-import { settingKeys } from '../types/settings.types';
 import { modalManager } from '../tools/modalManager';
+import { setUtil } from './settings';
 
-function getPath(path: string): unknown {
-	const pathArray = path.split('.');
-	const rules: Map<string, FlatCls> = settingUtil.get().classes;
-	let id: string = '';
-	let cls: FlatCls | undefined;
-	let value: unknown = '';
-	if (pathArray.length == 1) {
-		value = settingUtil.get()[path as settingKeys];
-		return value;
-	}
-	if (pathArray.length == 3 && pathArray[0] == 'rules') {
-		if (pathArray[0] && pathArray[1]) {
-			id = pathArray[1];
-			cls = rules.get(id);
-		}
-		if (!cls) return undefined;
-		if (pathArray[2]) {
-			switch (pathArray[2]) {
-				case 'name':
-					value = cls.name;
-					break;
-				case 'description':
-					value = cls.description;
-					break;
-				case 'destination':
-					value = cls.destination;
-					break;
-				default:
-					value = undefined;
-					break;
-			}
-		}
-	}
-	return value;
-}
-function setPath(path: string, value: unknown) {
-	const pathArray = path.split('.');
-	const classes: Map<string, FlatCls> = settingUtil.get().classes;
-	let id: string = '';
-	let cls: FlatCls | undefined;
-	if (pathArray.length == 1) {
-		settingUtil.updateMain({ [path]: value });
-	}
-	if (
-		pathArray.length == 3 &&
-		pathArray[0] == 'rules' &&
-		typeof value == 'string'
-	) {
-		if (pathArray[1]) {
-			id = pathArray[1];
-			cls = classes.get(id);
-		}
 
-		if (pathArray[2] && cls) {
-			switch (pathArray[2]) {
-				case 'name':
-					cls.name = value;
-					break;
-				case 'description':
-					cls.description = value;
-					break;
-				case 'destination':
-					cls.destination = value;
-					break;
-				default:
-					break;
-			}
-			settingUtil.updateCls(cls);
-		}
-		//devlog.loc('setPath', 'clsUpdate', {path, pathArray, value, id, cls, settings:settingUtil.get()})
-	}
-}
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
 	constructor(app: App, plugin: NoteClassifier) {
 		super(app, plugin);
 		this.plugin = plugin;
-		modalManager.init(plugin, () => this.update());
+		modalManager.init(plugin);
 	}
-	getControlValue(key: string): unknown {
-		const value = getPath(key);
-		return value;
-	}
-	async setControlValue(key: string, value: unknown): Promise<void> {
-		setPath(key, value);
-		await this.plugin.saveSettings();
-	}
+	
 	getSettingDefinitions(): SettingDefinitionItem[] {
-		const rootNodes = [...settingUtil.rootNodes()];
+		const rootNodes = setUtil.nodeTree;
 		return [
 			{
 				name: 'Debug Mode',
@@ -121,7 +39,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			{
 				name: 'Classification Property',
 				desc: 'The name of the property NCP will use for classificaiton',
-				visible: ()=>settingUtil.get().addClassificationProp,
+				visible: ()=>setUtil.base.addClassificationProp,
 				control:{key:'classificationProp', type:'text'}
 			},
 			{
@@ -185,7 +103,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			},
 			{
 				type: 'page',
-				name: 'Main Classifications',
+				name: 'Edit Classifications',
 				items: [
 					{
 						heading: 'Classes',
@@ -193,80 +111,25 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						addItem: {
 							name: 'Add Classification',
 							action: () => {
-								const newcls = settingUtil.newCls();
-								modalManager.ClsModal(newcls.cls);
+								const newcls = setUtil.newCls();
+								modalManager.ClsModal(newcls, ()=>this.update());
 							},
 						},
-						items: rootNodes.map((rule, index) =>
-							this.getClsPage(rule, index),
+						items: rootNodes.map((node) => ({
+							name: node.cls.name,
+							desc: node.cls.flat.description,
+							action: () => {
+								setUtil.deleteCls(node.id)
+								void this.plugin.saveSettings()
+								this.update()
+							}
+						})
 						),
 					},
 				],
 			},
+			
 		];
 	}
 
-	getClsPage(node: NodeClass, index: number): SettingGroupItem {
-		const cls = node.classification;
-		const flatcls = cls.flat;
-		const keystart = `rules.${flatcls.id}`;
-		return {
-			type: 'page',
-			//id:`${flatcls.id}.${index}`,
-			name: `${flatcls.name}`,
-			desc: `${flatcls.description ?? ''}`,
-			items: [
-				{
-					name: 'Name',
-					control: { key: `${keystart}.name`, type: 'text' },
-				},
-				{
-					name: 'Description',
-					control: {
-						key: `${keystart}.description`,
-						type: 'textarea',
-					},
-				},
-				{
-					name: 'Destination',
-					desc: "Folder where files of this class should be moved to. See Doc's for syntax",
-					control: { key: `${keystart}.destination`, type: 'text' },
-				},
-				...cls.getSettings((cls: TCls) => this.fullUpdate(cls)),
-
-				{
-					heading: 'Child Classifications',
-					type: 'list',
-					emptyState: 'No Child Classifications',
-					addItem: {
-						name: 'Add child classification',
-						action: () => {
-							const newcls = settingUtil.newCls(flatcls.id);
-							modalManager.ClsModal(newcls.cls);
-						},
-					},
-					onDelete: (index) => {
-						const childcls = node.children[index] ?? false;
-						if (childcls) {
-							settingUtil
-								.get()
-								.classes.delete(childcls.classification.id);
-							settingUtil.rootNodes();
-							void this.plugin.saveSettings();
-							this.update();
-						}
-					},
-					items: node.children.map((child, index) =>
-						this.getClsPage(child, index),
-					),
-				},
-			],
-		};
-	}
-
-	fullUpdate(cls: TCls) {
-		settingUtil.updateCls(cls.flat);
-		void this.plugin.saveSettings();
-		this.update();
-	}
 }

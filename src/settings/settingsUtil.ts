@@ -52,11 +52,11 @@ function buildNodeTree() {
   nodeMap.clear()
   clsMap.forEach((cls, key)=> nodeMap.set(key, new NodeClass(cls)) )
   nodeMap.forEach((node, key) => {
-    if (!node.classification.parentID) {
+    if (!node.cls.parentID) {
       nodeTree.push(node)
       return
     } 
-    const parentNode = nodeMap.get(node.classification.parentID)
+    const parentNode = nodeMap.get(node.cls.parentID)
     if (!parentNode) {
         console.error("Parent Node Not found")
         return
@@ -185,11 +185,17 @@ function newCls(parentID?: string): UpdateClsRes{
   devlog.log(log)
   return {success:true, cls:cls}
 }
+
+
+
+
 function nextID(): string{
   const next = settings.nextID.toString()
   settings.nextID++
   return `${next}`
 }
+
+
 export const settingUtil:SettingUtil = {
   get: getSettings,
   base: baseSettings, 

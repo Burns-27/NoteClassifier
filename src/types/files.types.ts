@@ -3,9 +3,7 @@ import { updateRes } from "./responses.types";
 
 export interface TClsFile {
   readonly TFile: TFile, 
-  readonly startPath:string, 
   name: string,
-  classification: string,
   destination: string,
   reportFlags: ReportFlags[],
   update: () => Promise<updateRes>, 

@@ -33,6 +33,7 @@ function createPropertyRule(flat:FlatPropertyRule, clsName:string): TRule {
   export function RuleFactory(idArray:string[], clsName:string): Map<string,TRule> {
     let madeRules: Map<string, TRule> = new Map()
     for (const id of idArray) {
+      //TODO (Setting Refactor) Replace this with rule Map get and check
       const flatRuleRes = settingUtil.getFlatRule(id)
       if (flatRuleRes.success) {
         const flatRule = flatRuleRes.rule

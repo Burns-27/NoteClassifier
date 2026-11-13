@@ -9,8 +9,9 @@ import { NCPData } from './types/settings.types';
 import { settingUtil } from './settings/settingsUtil';
 import { appUtils } from './tools/AppUtils';
 import { ClsFile } from './classification/ClassifiedFile';
-import {  debugLogArgs, devlog, logger } from './tools/logger';
+import {  devlog, logger } from './tools/logger';
 import { updateRes } from './types/responses.types';
+import { setUtil } from './settings/settings';
 
 
 export default class NoteClassifier extends Plugin {
@@ -93,24 +94,10 @@ export default class NoteClassifier extends Plugin {
 	}
 
 	async saveSettings() {
-		const settings = settingUtil.get()
-		const rules = Object.fromEntries(settings.rules)
-		const classes = Object.fromEntries(settings.classes)
-		const reqProps = Object.fromEntries(settings.reqProps)
-		let log:debugLogArgs= {
-			path: "Settings",
-			loc: 'Save',
-			msg:'', 
-			info: { settings, rules, classes, reqProps },
-			extra:{}
-		}
-		devlog.log(log)
-		await this.saveData({...settings,rules, classes, reqProps});
+		await this.saveData(setUtil.data);
 	}
 	async loadSettings() {
-
 		const data = await this.loadData() as Partial<NCPData>;
-		settingUtil.updateAll(data)
-		devlog.loc({path:'Settings', loc:'loadSettings', info:{data}, extra:{}, msg:""})
+		setUtil.load(data)
 	}
 }

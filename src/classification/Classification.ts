@@ -1,10 +1,9 @@
-import { SettingDefinitionList } from "obsidian";
+
 import { reqPropFactory } from "../ReqProps/factory";
 import { RuleFactory } from "../Rules/Factory";
-import { settingUtil } from "../settings/settingsUtil";
+import { setUtil } from "../settings/settings";
 import { devlog, debugLogArgs } from "../tools/logger";
-import { modalManager } from "../tools/modalManager";
-import { TRule, TReqProp, midFile, ClsRes, FlatRule, ClsPathRes, ClsPropsRes, FlatReqProp } from "../types";
+import { TRule, TReqProp, midFile, ClsRes, FlatRule,  FlatReqProp } from "../types";
 import { TCls, FlatCls } from "../types/classifications.types";
 
 export class Classification implements TCls{
@@ -14,13 +13,13 @@ export class Classification implements TCls{
   rules: Map<string, TRule>;
   flat: FlatCls
   private destination: string
-  requriedProperties: Map<string, TReqProp>;
+  reqProps: Map<string, TReqProp>;
   constructor(data: FlatCls) {
     this.id = data.id
     this.flat = data
     this.parentID = data.parentID
     this.name = data.name
-    this.requriedProperties = reqPropFactory(data.requriedProperties, this.name)
+    this.reqProps = reqPropFactory(data.requriedProperties, this.name)
     this.destination = data.destination;
     this.rules = RuleFactory(data.rules, this.name)
   }
@@ -51,139 +50,57 @@ export class Classification implements TCls{
     devlog.loc(log)
     return res
   }
-  getPath(): ClsPathRes{
-    let log = devlog.start('Move', 'Cls Get Path')
-    log.extra.cls = this
+  get path(): string[]{
     const clsDest = this.destination.split('/')
-    log.info.clsDestSplitArray = [...clsDest]
     let destinationArray: string[] = []
     if (clsDest[0] == "*") {
-      const parentClsRes = this.getParent()
-      log.extra.ParentClsRes = parentClsRes
-      if (parentClsRes.success) {
-        const parentCls = parentClsRes.cls
-        const parentClsPath = parentCls.getPath()
-        log.extra.ParentClsPathRes = parentClsPath
-        if (parentClsPath.success) {
-          log.info.parentClsPath = parentClsPath.path
-          destinationArray.push(...parentClsPath.path)
-        } else {
-          log.msg = "unable to get parent path"
-          devlog.err(log, {parentClsPath})
-        }
-      } else {
-        log.msg = 'Unable to get parent object'
-        devlog.err(log, {cls: this, parentClsRes })
-      }
+      const parentCls = this.parent
+      if (parentCls) {
+          destinationArray.push(...parentCls.path)
+
+      } 
       clsDest.shift()
     }
     destinationArray.push(...clsDest)
-    log.info.destinationArray = destinationArray
-    devlog.loc(log)
-    return {
-      success: true,
-      path: destinationArray
-    }
+    return  destinationArray
+    
   }
-  getProps(): ClsPropsRes{
-    let reqProp = new Map(this.requriedProperties)
-    if (this.parentID) {
-      const parentClsRes = this.getParent()
-      if (parentClsRes.success) {
-        const parentClsPropsRes = parentClsRes.cls.getProps()
-        if (parentClsPropsRes.success) {
-          for (const [key, prop] of parentClsPropsRes.props) {
+  get allReqProps(): Map<string, TReqProp>{
+    let reqProp = new Map(this.reqProps)
+      const parentCls = this.parent
+      if (parentCls) {
+        const parentClsProps= parentCls.allReqProps
+          for (const [key, prop] of parentClsProps) {
             if (!reqProp.has(key)) {
               reqProp.set(key, prop)
             }
           }
         }
-      }
-    }
-    return {
-      success: true, 
-      props: reqProp
-    }
+    return reqProp
   }
-  getParent(): ClsRes{
+
+   get parent(): TCls|false{
     if (this.parentID) {
-      const parentClsRes = settingUtil.getCls(this.parentID)
-      return parentClsRes
-    } else {
-      return {
-        success: false,
-        message:"No Parent ID"
+      const parentCls = setUtil.clsMap.get(this.parentID)
+      if (parentCls) {
+        return parentCls
       }
-    }
+    } 
+    return false
   }
-  getSettings(update:(cls:TCls)=>void): SettingDefinitionList[]{
-    return [this.rulesSetting(update), this.parentPropertiesSettings(), this.propSetting(update)]
-  };
-  private rulesSetting(update:(cls:TCls)=>void):SettingDefinitionList{
-    let array: TRule[] = []
-    this.rules.forEach((r)=>array.push(r))
-    return {
-      heading: "Rules",
-      type: 'list',
-      emptyState: "Add a rule to match notes to this classificaiton",
-      addItem: {
-        name: 'add rule',
-        action: () => {
-          const rule = this.addRule()
-          modalManager.RulesModal(this, rule)
-        }
-      },
-      onDelete: (index) => {
-        const ruleId = array[index]?.id ?? 'err'
-        this.flat.rules = this.flat.rules.filter((r) => r !== ruleId)
-        settingUtil.get().reqProps.delete(ruleId)
-        update(this)
-      },
-      items:array.map((r)=>({name:r.getDesc(), action:()=>{modalManager.RulesModal(this, r.flat)}}))
+ 
+  
+  public get parentReqProps(): Map<string, TReqProp>{
+    let parent = this.parent
+    if (parent) {
+      return parent.allReqProps
     }
-  };
-  private parentPropertiesSettings(): SettingDefinitionList{
-    let parent = this.getParent()
-    let propArray: Array<TReqProp> = []
-    if (parent.success) {
-      const parentPropsRes = parent.cls.getProps()
-      if (parentPropsRes.success) {
-        parentPropsRes.props.forEach((p)=>propArray.push(p))
-      }
-    }
-    return {
-      heading: 'Properties Required from Parent Classifications',
-      type: 'list',
-      emptyState: 'No properties Required From Parent Classifications',
-      items: propArray.map((p)=>({name:p.getDesc(), desc:`From:${p.clsName}`}))
-    }
+    return new Map()
   }
-  private propSetting(update:(cls:TCls)=>void): SettingDefinitionList{
-    let propertyArray: Array<TReqProp> = []
-    this.requriedProperties.forEach((p) => propertyArray.push(p))
-    return {
-      heading: "Required Properties",
-      type: 'list',
-      emptyState: "This Classificaiton has no property requirements",
-      addItem: {
-        name: 'add property',
-        action: () => { 
-          const prop = this.addReqProp()
-          modalManager.ReqPropModal(this, prop)
-         } 
-      },
-      onDelete: (index) => {
-        const propId = propertyArray[index]?.id ?? 'err'
-        this.flat.requriedProperties = this.flat.requriedProperties.filter(p => p !== propId)
-        settingUtil.get().reqProps.delete(propId)
-        update(this)
-      },
-      items:propertyArray.map((p)=>({name:p.getDesc(), action:()=>{modalManager.ReqPropModal(this, p.flat)}}))
-    }
-    
-  }
-  private addRule():FlatRule {
-    const id = settingUtil.nextID()
+
+ 
+  addRule():FlatRule {
+    const id = setUtil.nextID
     let rule: FlatRule = {
       type: 'property',
       matchType: "exact",
@@ -192,34 +109,38 @@ export class Classification implements TCls{
       id:id
     }
     this.flat.rules.push(id)
-    settingUtil.get().rules.set(id, rule)
+    setUtil.ruleMap.set(id, rule)
     this.rules = RuleFactory(this.flat.rules, this.name)
     return rule
   }
-  private addReqProp(): FlatReqProp{
-    const id = settingUtil.nextID()
+  addReqProp(): FlatReqProp{
+    const id = setUtil.nextID
     let prop: FlatReqProp = {
       id,
       type: 'exists',
       propertyName:''
     }
     this.flat.requriedProperties.push(id)
-    settingUtil.get().reqProps.set(id, prop)
-    this.requriedProperties = reqPropFactory(this.flat.requriedProperties, this.name)
+    setUtil.reqPropMap.set(id, prop)
+    this.reqProps = reqPropFactory(this.flat.requriedProperties, this.name)
     return prop
   }
 }
 
 export class NodeClass {
   children: NodeClass[] = [];
-  public classification: TCls;
+  isRoot:boolean
+  readonly id: string;
+  public cls: TCls;
   constructor(classification: TCls) {
-    this.classification = classification
+    this.cls = classification
+    this.id = classification.id
+    this.isRoot = !classification.parent
   }
   search(file: midFile, parentlog?:debugLogArgs): ClsRes{
     let log = parentlog ?? devlog.start('Classify', 'Node Search')
-    let res = this.classification.match(file)
-    log.extra[this.classification.name] = { name: this.classification.name, res, NumberOfChildren:this.children.length}
+    let res = this.cls.match(file)
+    log.extra[this.cls.name] = { name: this.cls.name, res, NumberOfChildren:this.children.length}
     if (res.success && (this.children.length > 0)) {
       for (const child of this.children) {
         const deeperMatch = child.search(file, log)

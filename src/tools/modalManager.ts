@@ -1,15 +1,16 @@
+import { NodeClass } from "../classification/Classification";
 import type NoteClassifier from "../main";
+import { CreateReqProp } from "../ReqProps/factory";
+import { CreateRule } from "../Rules/Factory";
 import { ClsModal } from "../settings/Modals/ClsModal";
 import { reqPropModal } from "../settings/Modals/reqPropsModal";
 import { RuleModal } from "../settings/Modals/rulesModal";
-import { settingUtil } from "../settings/settingsUtil";
-import { FlatCls, TCls } from "../types/classifications.types";
-import { FlatReqProp, FlatRule } from "../types/rules.types";
+import { FlatReqProp, FlatRule, TCls } from "../types";
+
 
 export class ModalManager {
   private static instance: ModalManager;
   private ncp!: NoteClassifier
-  private update!: ()=>void
   private constructor() { }
   
 
@@ -19,36 +20,29 @@ export class ModalManager {
     }
     return ModalManager.instance;
   }
-  public init(ncp: NoteClassifier, update:()=>void) {
+  public init(ncp: NoteClassifier) {
     this.ncp = ncp
-    this.update = update
   }
-  public RulesModal(cls: TCls, rule: FlatRule){
+  public RulesModal(cls: TCls, rule: FlatRule, display:()=>void){
     new RuleModal(this.ncp, rule, (newRule: FlatRule) => {
-      cls.flat.rules.push(rule.id)
-      cls.flat.rules = [...new Set(cls.flat.rules)]
-      settingUtil.get().rules.set(rule.id, newRule)
-      this.updateCls(cls.flat)
+      cls.rules.set(rule.id, CreateRule(newRule, cls.name))
+      display()
     }).open()
   }
-  public ReqPropModal(cls: TCls, reqProp: FlatReqProp) {
+  public ReqPropModal(cls: TCls, reqProp: FlatReqProp, display:()=>void) {
     new reqPropModal(this.ncp, reqProp, (res: FlatReqProp) => {
-      cls.flat.requriedProperties.push(reqProp.id)
-      cls.flat.requriedProperties = [...new Set(cls.flat.requriedProperties)]
-      settingUtil.get().reqProps.set(reqProp.id, res)
-      this.updateCls(cls.flat)
+      cls.reqProps.set(reqProp.id, CreateReqProp(res, cls.name))
+      display()
     }).open()
   }
-  public ClsModal(cls: TCls) {
-    new ClsModal(this.ncp, cls, (res: FlatCls) => {
-      this.updateCls(res)
+  public ClsModal(cls: NodeClass, display:()=>void) {
+    new ClsModal(this.ncp, cls, () => {
+      
+      void this.ncp.saveSettings()
+      display()
     }).open()
   }
-  private updateCls(cls: FlatCls) {
-    settingUtil.updateCls(cls)
-    void this.ncp.saveSettings()
-    this.update()
-  }
+  
 }
 
 export const modalManager = ModalManager.getInstance();
