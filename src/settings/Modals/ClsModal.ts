@@ -27,9 +27,12 @@ export class ClsModal extends Modal {
 		this.childClasses = node.children
 		this.display();
 		this.setCloseCallback(() => {
+			console.debug(`Closing Classification Modal for ${this.flatCls.name}`)
+			setUtil.clsMap.set(this.flatCls.id, this.cls)
 			void ncp.saveSettings()
 			update()
 		})
+		console.debug(`Opening Classification Modal for ${this.flatCls.name}`)
 	}
 	display() {
 		this.contentEl.empty();
@@ -62,6 +65,7 @@ export class ClsModal extends Modal {
 			this.parentProperties()
 		}
 		this.reqProps()
+		this.children()
 	}
 	rules() {
 		const rulesGroup = new SettingGroup(this.contentEl)
@@ -83,7 +87,7 @@ export class ClsModal extends Modal {
 		for (const [key, rule] of this.cls.rules) {
 			rulesGroup.addSetting((setting) => {
 				//TODO (Setting Refactor) Revamp rules to use getter for description
-				setting.setName(rule.getDesc())
+				setting.setName(rule.desc)
 				setting.addButton((button) => {
 					button.setButtonText('Edit')
 					button.onClick(() => {
@@ -108,7 +112,7 @@ export class ClsModal extends Modal {
 		parentPropsGroup.setHeading('Required Properties from Parent Classes')
 		for (const [, prop] of this.cls.parentReqProps) {
 			parentPropsGroup.addSetting((setting) => {
-				setting.setName(prop.getDesc())
+				setting.setName(prop.desc)
 				setting.setDesc(`From: ${prop.clsName}`)
 			})
 		}
@@ -124,9 +128,15 @@ export class ClsModal extends Modal {
 				modalManager.ReqPropModal(this.cls, reqProp, ()=>this.display())
 			})
 		})
+		if (this.cls.reqProps.size == 0) {
+			reqPropGroup.addSetting((setting) => {
+				setting.setName('Add a required property ')
+			})
+			return
+		}
 		for (const [key, prop] of this.cls.reqProps) {
 			reqPropGroup.addSetting((setting) => {
-				setting.setName(prop.getDesc())
+				setting.setName(prop.desc)
 				setting.addButton((button) => {
 					button.setButtonText('Edit')
 					button.onClick(() => {

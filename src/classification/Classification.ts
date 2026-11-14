@@ -2,14 +2,13 @@
 import { reqPropFactory } from "../ReqProps/factory";
 import { RuleFactory } from "../Rules/Factory";
 import { setUtil } from "../settings/settings";
-import { devlog, debugLogArgs } from "../tools/logger";
+import { logs } from "../tools/logClass";
 import { TRule, TReqProp, midFile, ClsRes, FlatRule,  FlatReqProp } from "../types";
 import { TCls, FlatCls } from "../types/classifications.types";
 
 export class Classification implements TCls{
   readonly id: string;
   readonly parentID?: string| null;
-  readonly name: string;
   rules: Map<string, TRule>;
   flat: FlatCls
   private destination: string
@@ -18,37 +17,37 @@ export class Classification implements TCls{
     this.id = data.id
     this.flat = data
     this.parentID = data.parentID
-    this.name = data.name
     this.reqProps = reqPropFactory(data.requriedProperties, this.name)
     this.destination = data.destination;
     this.rules = RuleFactory(data.rules, this.name)
   }
+  get name(): string{
+    return this.flat.name
+  }
   match(file: midFile): ClsRes{
-    let log = devlog.start('Classify', 'Cls Match')
-    log.extra.cls = this
+    let log = new logs('Classify', `Classification Match on ${this.name}`,false)
     let match: boolean[] = []
     let rulesMap: Map<string, { rule: FlatRule, match: boolean }> = new Map()
-    let res: ClsRes
     for (const [key, rule ]of this.rules) {
       const check = rule.match(file)
       rulesMap.set(key, {rule: rule.flat, match:check.success})
       match.push(check.success)
     }
+    
     const matchsimplified = !match.includes(false)
+    log.devRecord({match, rulesMap, matchsimplified})
     if (matchsimplified) {
-      res =  {
+      log.log('Matched')
+      return  {
         success: true,
         cls:this
       }
     } else {
-      res = {
+      log.log('Not A Match')
+      return {
         success:false,
       }
     }
-    log.info = { res, matchArray: match, clsMatches: matchsimplified }
-    log.extra = {rulesMap}
-    devlog.loc(log)
-    return res
   }
   get path(): string[]{
     const clsDest = this.destination.split('/')
@@ -137,21 +136,17 @@ export class NodeClass {
     this.id = classification.id
     this.isRoot = !classification.parent
   }
-  search(file: midFile, parentlog?:debugLogArgs): ClsRes{
-    let log = parentlog ?? devlog.start('Classify', 'Node Search')
+  search(file: midFile): ClsRes{
     let res = this.cls.match(file)
-    log.extra[this.cls.name] = { name: this.cls.name, res, NumberOfChildren:this.children.length}
     if (res.success && (this.children.length > 0)) {
       for (const child of this.children) {
-        const deeperMatch = child.search(file, log)
+        const deeperMatch = child.search(file)
         if (deeperMatch.success) {
           res = deeperMatch
           return res
         }
       }
     }
-    log.info.matchingRes = res
-    devlog.loc(log)
     return res
   }
 }

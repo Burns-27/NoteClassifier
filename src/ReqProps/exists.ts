@@ -12,8 +12,8 @@ export class ReqPropHas extends ReqProp {
         super(data, clsName)
         this.flat = data
     }
-    getDesc(): string {
-        return `File has ${this.propName} property, and it is not empty`
+    get desc(): string {
+        return `File has "${this.propName}" property, and it is not empty`
     }
     check(fm:FrontMatterCache): PropCheckRes {
         const check = getPropertyStringValue(this.propName, fm)

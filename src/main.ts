@@ -6,19 +6,19 @@ import {
 	NoteClassifierSettingTab,
 } from './settings/settingsTab';
 import { NCPData } from './types/settings.types';
-import { settingUtil } from './settings/settingsUtil';
 import { appUtils } from './tools/AppUtils';
 import { ClsFile } from './classification/ClassifiedFile';
-import {  devlog, logger } from './tools/logger';
+import { logger } from './tools/logger';
 import { updateRes } from './types/responses.types';
 import { setUtil } from './settings/settings';
+import { logs } from './tools/logClass';
 
 
 export default class NoteClassifier extends Plugin {
 	async onload() {
 		await this.loadSettings();
-		devlog.loc({path:'Main', loc:'onLoad', msg:"Plugin Loaded", info:{}, extra:{}})
-		this.settings = settingUtil.get()
+		this.settings = setUtil.data
+		logger.debug('Plugin Loaded', setUtil.base)
 		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
 		this.addCommand({
@@ -40,10 +40,11 @@ export default class NoteClassifier extends Plugin {
 				const allFilesArray = this.app.vault.getMarkdownFiles()
 				let movedTotal = 0
 				let flaggedTotal = 0 
+				let ignored = 0
+				let failed = 0
 				for (const file of allFilesArray) {
 					const res =await  this.updateFile(file)
-					
-				
+							
 					if (res.success) {
 						if (res.moved) {
 							movedTotal++
@@ -51,19 +52,23 @@ export default class NoteClassifier extends Plugin {
 						if (res.flagged) {
 							flaggedTotal++
 						}
+						if(res.ignored){
+							ignored++
+						}
 					} else {
-						flaggedTotal++
+						failed++
 					}
 				}
-				logger.sum(movedTotal, flaggedTotal)
+				logger.sum(movedTotal, flaggedTotal, ignored, failed)
 			}
 		})
 		this.addCommand({
 			id: "dev-mode",
 			name:'Turn on/off dev mode logs', 
 			callback: () => {
-				const currentDev = settingUtil.get().dev
-				settingUtil.updateMain({dev:!currentDev})
+				const currentDev = setUtil.base.dev
+				setUtil.base.dev = !currentDev
+				this.saveSettings()
 			}
 		})	
 	}
@@ -71,25 +76,31 @@ export default class NoteClassifier extends Plugin {
 	onunload() {}
 	
 	async updateFile(this: void, file: TFile,): Promise<updateRes> {
-		let log = devlog.start('Main', 'updateFile')
-		log.extra.file = file
-		log.info.name = file.basename
+		let log = new logs('Main','Update File', true)
+		
 		const clsFile = ClsFile.create(file)
-		log.info.clsFile = clsFile
+		log.add("TFile", file)
+		log.add('ClsFile Results',clsFile)
 		if (clsFile.success) {
 			const res = await clsFile.note.update()
-			log.info.updateRes = res
-			devlog.log(log)
+			log.add('Update res', res)
+			log.log('File Updated')
 			return res
-		} else if(clsFile.message == "ignored file"){
-			return { success: false}
-		}else{
-			log.msg = 'Unable to classifiy File'
-			let fm: Record<string, unknown> = {}
-			fm[settingUtil.get().NoticeProperty] = ['Unable to Classify']
-			await appUtils.processFrontmater(file, fm)
-			devlog.log(log)
-			return {success:false}
+		} else {
+			switch(clsFile.message){
+				case 'unable':
+					if(setUtil.base.flagUnclassified){
+						await appUtils.processFrontmater(file, {},['Unable to Classify'])
+					}
+					log.log(`Unable to Classify ${file.basename}`)
+					return {success:true, ignored:false, moved:false, flagged:setUtil.base.flagUnclassified}
+				case 'ignored':
+					log.log(`${file.basename} is Ignored`)
+					return {success:true, ignored:true, moved:false, flagged:false}
+				case 'error':
+					log.log(`Error in Classifying ${file.basename}`)
+					return {success:false}
+			}
 		}
 	}
 

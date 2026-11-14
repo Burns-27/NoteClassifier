@@ -1,6 +1,7 @@
 import { Modal, Notice, Setting } from "obsidian";
-import NoteClassifier from "../../main";
-import { FlatRule } from "../../types/rules.types";
+import type NoteClassifier from "../../main";
+import { FlatRule } from "../../types";
+import { setUtil } from "../settings";
 
 export class RuleModal extends Modal{
   rule: FlatRule
@@ -30,6 +31,7 @@ export class RuleModal extends Modal{
         new Notice("Error, rule not saved. ")
         return
       }
+      setUtil.ruleMap.set(this.id, this.rule)
       update(this.rule)
     })
     this.display()

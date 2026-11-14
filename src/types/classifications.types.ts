@@ -1,7 +1,9 @@
+import { midFile } from "./files.types";
+import { TReqProp, FlatReqProp } from "./reqProps.types";
+import { ClsRes } from "./responses.types";
+import { TRule, FlatRule } from "./rules.types";
 
-import type { midFile } from "./files.types";
-import type { ClsRes } from "./responses.types";
-import { FlatReqProp, FlatRule, TReqProp, TRule } from "./rules.types";
+
 
 export interface TCls {
   readonly id: string;

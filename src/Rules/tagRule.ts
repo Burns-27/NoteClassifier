@@ -23,6 +23,7 @@ export class ExactTagRule extends Rule {
         message:"File Has no tags"
       }
       return res
+      
       }
     const check = file.tags.find((t) => t.replace("#",'') == this.tag) 
     if (!check) {
@@ -33,7 +34,7 @@ export class ExactTagRule extends Rule {
       success: true,
     }
   }
-  getDesc(): string{
+  get desc(): string{
     return ` has #${this.tag}`
   }
 }
@@ -76,7 +77,7 @@ export class IncludeTagRule extends Rule  {
       success: true,
     }
   }
-  getDesc() {
+  get desc(): string {
     return `includes '#${this.tag}'`
   }
 }

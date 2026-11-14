@@ -1,4 +1,5 @@
-import { settingUtil } from "../settings/settingsUtil";
+
+import { setUtil } from "../settings/settings";
 import type { FlatPropertyRule, FlatRule, FlatTagRule, TRule } from "../types/rules.types";
 import { ExactPropertyRule,  } from "./propertyRule";
 import { ExactTagRule, IncludeTagRule } from "./tagRule";
@@ -33,10 +34,8 @@ function createPropertyRule(flat:FlatPropertyRule, clsName:string): TRule {
   export function RuleFactory(idArray:string[], clsName:string): Map<string,TRule> {
     let madeRules: Map<string, TRule> = new Map()
     for (const id of idArray) {
-      //TODO (Setting Refactor) Replace this with rule Map get and check
-      const flatRuleRes = settingUtil.getFlatRule(id)
-      if (flatRuleRes.success) {
-        const flatRule = flatRuleRes.rule
+      const flatRule = setUtil.ruleMap.get(id)
+      if (flatRule) {
         madeRules.set(id, CreateRule(flatRule, clsName))
       }
     }

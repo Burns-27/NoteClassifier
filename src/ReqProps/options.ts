@@ -12,8 +12,8 @@ export class ReqPropOptions extends ReqProp{
     this.flat = data
     this.propValueOptions = data.propVauleOptions
   }
-  getDesc(): string{
-    return `File has ${this.propName} property, and its value is one of:  "${this.propValueOptions.join('", "')}"`
+  get desc(): string{
+    return `File has "${this.propName}" property, and its value is one of:  "${this.propValueOptions.join('", "')}"`
   }
   check(fm:FrontMatterCache): PropCheckRes{
     const check = getPropertyStringValue(this.propName, fm)

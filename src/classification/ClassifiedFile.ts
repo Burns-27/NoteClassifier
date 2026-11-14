@@ -4,12 +4,12 @@ import {
 	type TFile,
 	type FrontMatterCache,
 } from 'obsidian';
-import { settingUtil } from '../settings/settingsUtil';
 import { appUtils } from '../tools/AppUtils';
-import { getPropertyStringValue } from '../tools/propertyUtils';
+import { getPropertyBooleanValue, getPropertyStringValue } from '../tools/propertyUtils';
 import { setUtil } from '../settings/settings';
 import { checkIgnoredFolder } from '../tools/PathUtils';
-import type { midFile, NoteClsRes, ReportFlags, TCls, TClsFile, updateRes } from '../types';
+import type { ClsRes, midFile, NoteClsRes, ReportFlags, TCls, TClsFile, updateRes } from '../types';
+import { logs } from '../tools/logClass';
 
 export class ClsFile implements TClsFile {
 	readonly TFile: TFile;
@@ -33,32 +33,38 @@ export class ClsFile implements TClsFile {
 		this.destination = destination;
 		this.folderArray = folderArray;
 		this.needsMoved = TFile.path != this.destination;
-		if (settingUtil.get().addClassificationProp) {
-			this.newFrontmatter[settingUtil.get().classificationProp] =
+		if (setUtil.base.addClassificationProp) {
+			this.newFrontmatter[setUtil.base.classificationProp] =
 				cls.name;
 		}
 		this.validateProperties();
 	}
 	static create(file: TFile): NoteClsRes {
-		if (checkIgnoredFolder(file.path)) {
+		let log = new logs('Classify', 'ClsFile Create', true)
+		const checkFolder = checkIgnoredFolder(file.path)
+		log.add('Check Folder Res', checkFolder)
+		if (checkFolder) {
+			log.log(`${file.basename} In Ignored Folder`)
 			return {
 				success: false,
-				message:'ignored file'
+				message:'ignored'
 			}
 		}
 		const cache = appUtils.getFileCache(file);
 		if (!cache) {
-			return { success: false, message: 'No Cache' };
+			log.log(`${file.basename} has no cache`)
+			return { success: false, message: 'error' };
 		}
 		const tags = getAllTags(cache);
-		const checkIgnoredProperty = getPropertyStringValue(
-			settingUtil.get().ignoreFilesProperty,
+		const checkIgnoredProperty = getPropertyBooleanValue(
+			setUtil.base.ignoreFilesProperty,
 			cache.frontmatter,
 		);
 		if (checkIgnoredProperty) {
+			log.log(`${file.basename} has ignore property`)
 			return {
 				success: false,
-				message: 'ignored file',
+				message:'ignored',
 			};
 		}
 		const midFile: midFile = {
@@ -66,17 +72,22 @@ export class ClsFile implements TClsFile {
 			metadataCache: cache,
 			tags: tags,
 		};
-		let cls: TCls | undefined;
+		log.add('MidFile', midFile)
+		let cls: TCls | false = false;
+		let resArray: Array<ClsRes> =[]
 		for (const node of setUtil.nodeTree) {
 			const res = node.search(midFile);
+			resArray.push(res)
 			if (res.success) {
 				cls = res.cls;
 			}
 		}
 		if (!cls) {
-			return { success: false, message: 'No matching Cls' };
+			log.log(`Unable to match ${file.basename} to a classification`)
+			return { success: false, message: 'unable' };
 		}
 		const note = new ClsFile(midFile, cls);
+		 log.log(`${file.basename} Classified as ${cls.name}`)
 		return {
 			success: true,
 			note: note,
@@ -85,18 +96,16 @@ export class ClsFile implements TClsFile {
 	getDestination(): { destination: string; folderArray: string[] } {
 		let destArray: string[] = [];
 		let fallbackFlag: boolean = false;
-		const clsDest = this.cls.getPath();
-		if (!clsDest.success) {
-			return { destination: this.TFile.path, folderArray: [] };
-		}
-		for (const section of clsDest.path) {
+		const clsDest = this.cls.path;
+	
+		for (const section of clsDest) {
 			const res = this.pathSection(section);
 			if (res.fallbackFlag) {
 				fallbackFlag = true;
 			}
 			destArray.push(res.value);
 		}
-		if (fallbackFlag && settingUtil.base.flagFallbackDefault) {
+		if (fallbackFlag && setUtil.base.flagFallbackDefault) {
 			this.reportFlags.push('Missing Properties for path');
 		}
 		const folderArray = [...destArray];
@@ -106,11 +115,8 @@ export class ClsFile implements TClsFile {
 	}
 
 	validateProperties() {
-		const propsRes = this.cls.getProps();
-		if (!propsRes.success) {
-			return;
-		}
-		const props = propsRes.props;
+		const props = this.cls.allReqProps;
+		
 		let missingflag: boolean = false;
 		let missingProps: string[] = [];
 		let wrongflag: boolean = false;
@@ -130,7 +136,7 @@ export class ClsFile implements TClsFile {
 		}
 		if (missingflag) {
 			this.reportFlags.push('Missing Required Properties');
-			if (settingUtil.base.addMissingProps) {
+			if (setUtil.base.addMissingProps) {
 				for (const prop of missingProps) {
 					this.newFrontmatter[prop] = '';
 				}
@@ -161,7 +167,7 @@ export class ClsFile implements TClsFile {
 			);
 			moved = true;
 		}
-		return { success: true, moved: moved, flagged: flagged };
+		return { success: true, moved: moved, flagged: flagged, ignored:false };
 	}
 
 	private pathSection(section: string): {
@@ -211,10 +217,10 @@ export class ClsFile implements TClsFile {
 			return res;
 		} else {
 			res.fallbackFlag = true;
-			if (settingUtil.base.pathFallbackDefault == 'Prop') {
+			if (setUtil.base.pathFallbackDefault == 'Prop') {
 				res.value = res.prop;
 			}
-			if (settingUtil.base.pathFallbackDefault == 'Skip') {
+			if (setUtil.base.pathFallbackDefault == 'Skip') {
 				res.value = '';
 			}
 			return res;

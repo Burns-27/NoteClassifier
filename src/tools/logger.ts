@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import { settingUtil } from "../settings/settingsUtil";
+import { setUtil } from "../settings/settings";
 
 
 export interface debugLogArgs {
@@ -20,20 +20,20 @@ function start(path: pathStrings, loc: string, msg:string = ""): debugLogArgs{
   }
 }
 function location(args: debugLogArgs) {
-  if (settingUtil.get().dev) {
+  if (setUtil.base.dev) {
     debug(`(${args.path} - ${args.loc}) ${args.msg}`, { ...args.info, extra: args.extra })
   } 
 }
 function cleanLog(args: debugLogArgs) {
-  if (settingUtil.get().dev) {
+  if (setUtil.base.dev) {
     debug(`(${args.path} - ${args.loc}) ${args.msg}`, {...args.info, extra:args.extra})
   } else {
     debug(`(${args.path} - ${args.loc}) ${args.msg}`, args.info)
   }
 }
 const debug = (...args: unknown[]): void => {
-  if (settingUtil.get().debug) {
-    console.debug('[NCP]', ...args);
+  if (setUtil.base.debug) {
+    console.debug('*NCP*', ...args);
   }
 };
 const devErr = (args:debugLogArgs, error:unknown) => {
@@ -47,17 +47,20 @@ export const devlog = {
   start:start,
 }
 function errorNotice(thing: string, ...args: unknown[]) {
-  if (settingUtil.get().ErrorNotice) {
+  if (setUtil.base.ErrorNotice) {
     new Notice(thing)
   }
   debug(thing, args)
 }
 
-function summaryNotice(moved: number, flagged: number) {
-  if (settingUtil.get().SummaryNotice) {
-    new Notice(`${moved} Files moved, and ${flagged} files flagged for review`)
+function summaryNotice(moved: number, flagged: number, ignored:number, failed:number) {
+  if (setUtil.base.SummaryNotice) {
+    new Notice(`${moved} Files moved
+${flagged} Files flagged 
+${ignored} Files ignored
+${failed} Files failed`)
   }
-  debug({FilesMoved:moved, filesFlagged:flagged})
+  debug('Update all Files Summary',{FilesMoved:moved, filesFlagged:flagged, filesIgnored:ignored, filesFailed:failed})
 }
 
 export const logger = {

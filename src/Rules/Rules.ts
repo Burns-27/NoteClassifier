@@ -11,6 +11,7 @@ export abstract class Rule implements TRule{
   public type: RuleTypeOpts
   public matchType: MatchTypeOpts
   public clsName: string
+  abstract desc: string
   constructor(data: FlatRule, clsName: string) {
     this.id = data.id
     this.type = data.type
@@ -18,8 +19,6 @@ export abstract class Rule implements TRule{
     this.clsName = clsName
   }
   
-  
-  abstract getDesc():string
   abstract match(file:midFile):RuleMatchRes
 }
 

@@ -1,6 +1,7 @@
 import { App, CachedMetadata, getAllTags, normalizePath, TFile } from "obsidian";
 import { devlog, logger } from "./logger";
-import { settingUtil } from "../settings/settingsUtil";
+import { setUtil } from "../settings/settings";
+import { logs } from "./logClass";
 
 export class AppUtils {
   private static instance: AppUtils;
@@ -23,23 +24,23 @@ export class AppUtils {
     return getAllTags(cache)
   }
   public async processFrontmater(file: TFile, newFM: Record<string, unknown>, flags?:string[]) {
-    let log = devlog.start('Main', 'process Frontmatter')
-    log.info.newFM = newFM
-    log.info.flags = flags
+    let log = new logs('Update', 'Process FrontMatter',false)
+    log.devRecord({newFM,flags})
+    let removeFlag:boolean = false
+    if(flags && flags.length !==0){
+      newFM[setUtil.base.NoticeProperty] = flags
+    } else {
+      removeFlag = true
+    }
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       try {
         Object.assign(frontmatter, newFM)
-        if (flags && flags.length !== 0) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- frontmatter is weird
-          frontmatter[settingUtil.get().NoticeProperty] = flags
-        }
-        else {
+        if (removeFlag) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- frontmatter is weird (And any by default)
-          delete frontmatter[settingUtil.get().NoticeProperty]
+          delete frontmatter[setUtil.base.NoticeProperty]
         }
-        log.info.fm = { ...frontmatter }
-        
-        devlog.loc(log)
+        log.add('Resulting FM', frontmatter)
+        log.log('Updated')
       } catch (e) {
         console.debug(e)
       }

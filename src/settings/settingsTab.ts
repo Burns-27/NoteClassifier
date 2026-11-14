@@ -6,7 +6,7 @@ import {
 import NoteClassifier from '../main';
 import { modalManager } from '../tools/modalManager';
 import { setUtil } from './settings';
-
+import { IgnoredFolderModal } from './Modals/IgnoredFoldersModal';
 
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;
@@ -15,32 +15,27 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 		modalManager.init(plugin);
 	}
-	
+
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		const rootNodes = setUtil.nodeTree;
+		const ignoredFolders = [...setUtil.ignoredFoldersSet]
 		return [
 			{
 				name: 'Debug Mode',
 				desc: 'Enable Debug logs in the developer tools',
 				control: { type: 'toggle', key: 'debug' },
 			},
-			{
-				name: 'Create Reports',
-				desc: 'Create a .bases file with views that filters based on notices. See docs for details.  ',
-				action: () => {
-					console.debug('Create Report button Clicked');
-				},
-			},
+			
 			{
 				name: 'Add Classification Prop',
 				desc: 'When on, NCP will add a property with the classification name to a updated file',
-				control:{key:'addClassificationProp', type:'toggle'}
+				control: { key: 'addClassificationProp', type: 'toggle' },
 			},
 			{
 				name: 'Classification Property',
 				desc: 'The name of the property NCP will use for classificaiton',
-				visible: ()=>setUtil.base.addClassificationProp,
-				control:{key:'classificationProp', type:'text'}
+				visible: () => setUtil.base.addClassificationProp,
+				control: { key: 'classificationProp', type: 'text' },
 			},
 			{
 				name: 'Notificaitons and defaults',
@@ -58,14 +53,24 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						control: { type: 'toggle', key: 'ErrorNotice' },
 					},
 					{
+						type:'group',
+						heading:'File Flags',
+						items:[
+							{
 						name: 'Notice Property',
 						desc: 'the property used to indicate a file has errors',
 						control: { type: 'text', key: 'NoticeProperty' },
+					},{
+						name:'Flag Unclassified Files',
+						control:{type:'toggle',key:'flagUnclassified'}
+					}
+						]
 					},
+					
 					{
 						name: 'Add Mising Properties',
 						desc: 'When on, NCP will automatically add missing properties to note',
-						control:{type:'toggle', key:'addMissingProps'}
+						control: { type: 'toggle', key: 'addMissingProps' },
 					},
 					{
 						type: 'group',
@@ -97,9 +102,33 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 				],
 			},
 			{
-				name: 'Ingore property',
-				desc: 'if this property is checked on a file, it will be ignored by NoteClassifier',
-				control: { key: 'ignoreFilesProperty', type: 'text' },
+				type: 'page',
+				name: 'Ignored File and Folders',
+				items: [
+					{
+						name: 'Ingore property',
+						desc: 'if this property is checked on a file, it will be ignored by NoteClassifier',
+						control: { key: 'ignoreFilesProperty', type: 'text' },
+					},
+					{
+						type:'list',
+						heading:'Ignored Folders',
+						addItem:{
+							name:'Add Ignored Folder',
+							action:()=>{
+								new IgnoredFolderModal(this.plugin, ()=>this.update()).open()
+							}
+						},
+						onDelete:(index)=>{
+							setUtil.ignoredFoldersSet.delete(ignoredFolders[index]??'')
+							this.update()
+						},
+						items:ignoredFolders.map((f)=>({
+							name:f
+						}))
+						
+					}
+				],
 			},
 			{
 				type: 'page',
@@ -111,25 +140,30 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						addItem: {
 							name: 'Add Classification',
 							action: () => {
-								const newcls = setUtil.newCls();
-								modalManager.ClsModal(newcls, ()=>this.update());
+								const { node } = setUtil.newCls();
+								modalManager.ClsModal(node, () =>
+									this.update(),
+								);
 							},
+						},
+						onDelete: (index) => {
+							const node = rootNodes[index];
+							setUtil.deleteCls(node?.id ?? 'Error');
+							void this.plugin.saveSettings();
+							this.update();
 						},
 						items: rootNodes.map((node) => ({
 							name: node.cls.name,
 							desc: node.cls.flat.description,
 							action: () => {
-								setUtil.deleteCls(node.id)
-								void this.plugin.saveSettings()
-								this.update()
-							}
-						})
-						),
+								modalManager.ClsModal(node, () =>
+									this.update(),
+								);
+							},
+						})),
 					},
 				],
 			},
-			
 		];
 	}
-
 }

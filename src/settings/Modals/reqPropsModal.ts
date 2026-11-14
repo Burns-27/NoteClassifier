@@ -1,6 +1,7 @@
 import { Modal, Setting } from "obsidian";
-import { FlatReqProp } from "../../types/rules.types";
 import NoteClassifier from "../../main";
+import { FlatReqProp } from "../../types";
+import { setUtil } from "../settings";
 
 export class reqPropModal extends Modal{
   reqProp: FlatReqProp
@@ -19,6 +20,7 @@ export class reqPropModal extends Modal{
     }
     this.setCloseCallback(() => {
       this.generateReqProp()
+      setUtil.reqPropMap.set(this.id, this.reqProp)
       update(this.reqProp)
     })
     this.display()

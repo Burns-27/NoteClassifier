@@ -1,6 +1,7 @@
 import { TCls } from "./classifications.types"
 import { TClsFile } from "./files.types"
-import { FlatReqProp, FlatRule, TReqProp } from "./rules.types"
+import { FlatReqProp, TReqProp } from "./reqProps.types"
+import { FlatRule } from "./rules.types"
 
 export type FailRes = {
   success: false,
@@ -9,6 +10,7 @@ export type FailRes = {
 }
 export type updateRes = {
   success:true,
+  ignored:boolean,
   moved: boolean, 
   flagged:boolean,
 }| FailRes
@@ -28,7 +30,7 @@ export type flatPropRes = {
 export type NoteClsRes = {
   success: true,
   note: TClsFile
-}|FailRes
+}|{success:false, message:'unable'|'ignored'|'error'}
 
 export type ClsPathRes = {
   success: true,

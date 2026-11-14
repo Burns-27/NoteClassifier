@@ -60,6 +60,15 @@ export class SettingsUtil {
       reqProps:Object.fromEntries(this.reqPropMap)
     }
   }
+  public get logLevel():'dev'|'debug'|'none'{
+    if(!this.base.debug){
+      return "none"
+    }
+    if(!this.base.dev){
+      return "debug"
+    }
+    return 'dev'
+  }
   public deleteCls(id: string) {
     const node = this.nodeMap.get(id)
     if (node && node.children) {

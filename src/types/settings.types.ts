@@ -1,8 +1,11 @@
 import { NodeClass } from '../classification/Classification';
-import type { FlatCls } from './classifications.types';
-import type { midFile } from './files.types';
-import type { ClsRes, flatPropRes, flatRuleRes, UpdateClsRes } from './responses.types';
-import { FlatReqProp, FlatRule } from './rules.types';
+import { FlatCls } from './classifications.types';
+import { midFile } from './files.types';
+import { FlatReqProp } from './reqProps.types';
+import { ClsRes, UpdateClsRes, flatRuleRes, flatPropRes } from './responses.types';
+import { FlatRule } from './rules.types';
+
+
 
 export type NCPSettings = {
 	rules: Map<string, FlatRule>;
@@ -17,6 +20,7 @@ export type BaseNCPSettings = {
   SummaryNotice: boolean;
   ErrorNotice: boolean;
   NoticeProperty: string;
+  flagUnclassified:true;
   flagFallbackDefault: boolean;
   pathFallbackDefault: 'Prop' | 'Skip';
   ignoredFolders: string[];
@@ -38,7 +42,7 @@ export type settingKeys =
 	| 'NoticeProperty'
 	| 'debug' |'dev'
 	| 'ignoredFolders'
-	| 'ignoreFilesProperty'|'addMissingProps'|'classificationProp'|'addClassificationProp';
+	| 'ignoreFilesProperty'|'addMissingProps'|'classificationProp'|'addClassificationProp'|'flagUnclassified';
 
 export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
 	nextID: 1,
@@ -47,6 +51,7 @@ export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
 	SummaryNotice: true,
 	ErrorNotice: true,
 	NoticeProperty: 'NC_Notice',
+	flagUnclassified:true,
 	flagFallbackDefault: false,
 	pathFallbackDefault: 'Skip',
 	ignoredFolders: [],
