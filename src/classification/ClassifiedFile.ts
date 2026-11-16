@@ -7,7 +7,7 @@ import {
 import { appUtils } from '../tools/AppUtils';
 import { getPropertyStringValue } from '../tools/propertyUtils';
 import { setUtil } from '../settings/settings';
-import type { ClsRes, midFile, NoteClsRes, ReportFlags, TCls, TClsFile, updateRes } from '../types';
+import type { ClsRes, flagsProp, midFile, NoteClsRes, TCls, TClsFile, updateRes } from '../types';
 import { logs } from '../tools/logClass';
 import { ignoreUtil } from '../Ignore/ignoreUtil';
 
@@ -15,28 +15,17 @@ export class ClsFile implements TClsFile {
 	readonly TFile: TFile;
 	public name: string;
 	private frontmatter: FrontMatterCache;
-	private tags: Array<string>;
 	private cls: TCls;
-	private needsMoved: boolean;
-	private newFrontmatter: Record<string, unknown>;
-	destination: string;
-	private folderArray: string[];
-	reportFlags: ReportFlags[] = [];
+	readonly flags: flagsProp = {
+			pathFallback: false,
+			propsInvalid: false,
+		  propsMissing: false,
+	}
 	constructor({ TFile, metadataCache, tags }: midFile, cls: TCls) {
 		this.TFile = TFile;
 		this.name = TFile.basename;
 		this.cls = cls;
 		this.frontmatter = metadataCache.frontmatter ?? {};
-		this.newFrontmatter = {};
-		this.tags = tags ?? [];
-		const { destination, folderArray } = this.getDestination();
-		this.destination = destination;
-		this.folderArray = folderArray;
-		this.needsMoved = TFile.path != this.destination;
-		if (setUtil.base.addClassificationProp) {
-			this.newFrontmatter[setUtil.base.classificationProp] =
-				cls.name;
-		}
 		this.validateProperties();
 	}
 	static create(file: TFile): NoteClsRes {
@@ -92,58 +81,39 @@ export class ClsFile implements TClsFile {
 			note: note,
 		};
 	}
-	getDestination(): { destination: string; folderArray: string[] } {
+	get destination(): string  {
+		let log = new logs('Move', 'File get destination', false)
 		let destArray: string[] = [];
-		let fallbackFlag: boolean = false;
 		const clsDest = this.cls.path;
 	
 		for (const section of clsDest) {
-			const res = this.pathSection(section);
-			if (res.fallbackFlag) {
-				fallbackFlag = true;
-			}
-			destArray.push(res.value);
+			const res = this.pathSection(section, log);
+			destArray.push(res);
 		}
-		if (fallbackFlag && setUtil.base.flagFallbackDefault) {
-			this.reportFlags.push('Missing Properties for path');
-		}
+		
 		const folderArray = [...destArray];
 		destArray.push(this.TFile.name);
 		const destination = normalizePath(destArray.join('/'));
-		return { destination, folderArray };
+		return  destination;
 	}
 
 	validateProperties() {
 		const props = this.cls.allReqProps;
-		let missingflag: boolean = false;
 		let missingProps: string[] = [];
-		let wrongflag: boolean = false;
 		for (const [, prop] of props) {
 			const res = prop.check(this.frontmatter);
 			if (!res.check) {
 				switch (res.type) {
 					case 'opt':
-						wrongflag = true;
+						this.flags.propsInvalid = true;
 						break;
 					case 'has':
-						missingflag = true;
+						this.flags.propsInvalid = true;
 						missingProps.push(res.prop);
 						break;
 				}
 			}
 		}
-		if (missingflag) {
-			this.reportFlags.push('Missing Required Properties');
-			if (setUtil.base.addMissingProps) {
-				for (const prop of missingProps) {
-					this.newFrontmatter[prop] = '';
-				}
-			}
-		}
-		if (wrongflag) {
-			this.reportFlags.push('One or More Properties has Incorrect Value');
-		}
-
 	}
 
 	async update(): Promise<updateRes> {
@@ -168,60 +138,38 @@ export class ClsFile implements TClsFile {
 		return { success: true, moved: moved, flagged: flagged, ignored:false };
 	}
 
-	private pathSection(section: string): {
-		value: string;
-		section: string;
-		isProp: boolean;
-		prop: string;
-		hasfallback: boolean;
-		fallback: string;
-		fallbackFlag: boolean;
-	} {
+	private pathSection(section: string, log:logs):string{
 		// Check for Prop
-		let res = {
-			section,
-			value: section,
-			isProp: false,
-			prop: '',
-			hasfallback: false,
-			fallback: '',
-			fallbackFlag: false,
-		};
+		let end: string = '';
+		//checks if it is a property
 		if (!(section.startsWith('[') && section.endsWith(']'))) {
-			return res;
+			return section;
 		}
-		// Check For Fall back
-		res.isProp = true;
-		const prop = section.slice(1, -1);
-		res.prop = prop;
+		// Since its a property, checks for fallback. 
+		let prop = section.slice(1, -1);
+		let hasfallback:boolean = false
+		let fallback:string = (setUtil.base.pathFallbackDefault == 'Skip') ? "": prop
 		if (prop.includes('|') && !prop.endsWith('|')) {
 			const propSplit = prop.split('|');
-			if (propSplit.length == 1 && propSplit[0]) {
-				res.hasfallback = false;
-				res.prop = propSplit[0];
-			}
 			if (propSplit.length == 2 && propSplit[0] && propSplit[1]) {
-				res.hasfallback = true;
-				res.prop = propSplit[0];
-				res.fallback = propSplit[1];
+				prop = propSplit[0];
+				fallback = propSplit[1];
+				hasfallback = true
 			}
 		}
 		const value = getPropertyStringValue(prop, this.frontmatter);
 		if (value) {
-			res.value = value;
-			return res;
-		} else if (res.hasfallback) {
-			res.value = res.fallback;
-			return res;
+			end = value;
 		} else {
-			res.fallbackFlag = true;
-			if (setUtil.base.pathFallbackDefault == 'Prop') {
-				res.value = res.prop;
+			end = fallback
+			if (!hasfallback) {
+				this.flags.pathFallback = true
 			}
-			if (setUtil.base.pathFallbackDefault == 'Skip') {
-				res.value = '';
-			}
-			return res;
 		}
+		let sectionInfo = {
+			prop, fallback, value, end
+		}
+		log.add(`path check:${section}`, sectionInfo)
+		return end
 	}
 }
