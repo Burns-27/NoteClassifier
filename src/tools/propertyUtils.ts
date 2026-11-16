@@ -15,3 +15,4 @@ export function getPropertyBooleanValue(prop: string, fm: FrontMatterCache = {})
     return false
   }
 }
+

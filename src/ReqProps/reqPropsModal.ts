@@ -1,7 +1,7 @@
 import { Modal, Setting } from "obsidian";
-import NoteClassifier from "../../main";
-import { FlatReqProp } from "../../types";
-import { setUtil } from "../settings";
+import NoteClassifier from "../main";
+import { FlatReqProp } from "../types";
+import { setUtil } from "../settings/settings";
 
 export class reqPropModal extends Modal{
   reqProp: FlatReqProp

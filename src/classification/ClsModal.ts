@@ -1,9 +1,9 @@
 import {  Modal, Setting, SettingGroup } from 'obsidian';
-import NoteClassifier from '../../main';
-import { modalManager } from '../../tools/modalManager';
-import { setUtil } from '../settings';
-import { NodeClass } from '../../classification/Classification';
-import { FlatCls, TCls } from '../../types';
+import NoteClassifier from '../main';
+import { modalManager } from '../tools/modalManager';
+import { setUtil } from '../settings/settings';
+import { NodeClass } from './Classification';
+import { FlatCls, TCls } from '../types';
 
 
 export class ClsModal extends Modal {
