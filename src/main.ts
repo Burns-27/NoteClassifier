@@ -1,6 +1,7 @@
 import {
 	Plugin,
 	TFile,
+	TFolder,
 } from 'obsidian';
 import {
 	NoteClassifierSettingTab,
@@ -12,6 +13,7 @@ import { logger } from './tools/logger';
 import { updateRes } from './types/responses.types';
 import { setUtil } from './settings/settings';
 import { logs } from './tools/logClass';
+import { ignoreUtil } from './Ignore/ignoreUtil';
 
 
 export default class NoteClassifier extends Plugin {
@@ -21,6 +23,7 @@ export default class NoteClassifier extends Plugin {
 		logger.debug('Plugin Loaded', setUtil.base)
 		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
+		this.addIgnoreCommandsAndMenuOptions()
 		this.addCommand({
 			id: `update-active-file`,
 			name: 'Update active file',
@@ -29,7 +32,7 @@ export default class NoteClassifier extends Plugin {
 				const file = this.app.workspace.getActiveFile()
 				if (file) {
 					console.debug(`Updating File: ${file.basename}`)
-				  await this.updateFile(file)
+					await this.updateFile(file)
 				}
 			}
 		})
@@ -68,16 +71,15 @@ export default class NoteClassifier extends Plugin {
 			callback: () => {
 				const currentDev = setUtil.base.dev
 				setUtil.base.dev = !currentDev
-				this.saveSettings()
+				void this.saveSettings()
 			}
 		})	
 	}
 	
 	onunload() {}
 	
-	async updateFile(this: void, file: TFile,): Promise<updateRes> {
+	async updateFile(file: TFile): Promise<updateRes> {
 		let log = new logs('Main','Update File', true)
-		
 		const clsFile = ClsFile.create(file)
 		log.add("TFile", file)
 		log.add('ClsFile Results',clsFile)
@@ -103,7 +105,52 @@ export default class NoteClassifier extends Plugin {
 			}
 		}
 	}
-
+	getActiveFile(): TFile | false{
+		const file = this.app.workspace.getActiveFile()
+				if (file) {
+					return file
+				} 
+			return false
+	}
+	addIgnoreCommandsAndMenuOptions() {
+		this.addCommand({
+			id: 'ignore-file',
+			name: 'Ignore active file',
+			checkCallback: (checking: boolean) => {
+				const log = new logs('Settings', 'ignore active file', false)
+				const file = this.getActiveFile()
+				log.add('Active file check', file)
+				if (file) {
+					if (!checking) {
+						ignoreUtil.markFileIgnored(file,log)
+					}
+					return true
+				}
+				return false
+			}
+		})
+		this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+			let log = new logs('Settings', 'ignore file menu', false)
+			if (file instanceof TFile) {
+				menu.addItem((item) => {
+					item.setTitle('Ignore file')
+					item.setIcon('document')
+						.onClick(() => {
+						ignoreUtil.markFileIgnored(file, log)
+					})
+				})
+			} else if (file instanceof TFolder) {
+				menu.addItem((item) => {
+					item.setTitle('Ignore folder')
+					item.setIcon('folder')
+					item.onClick(() => {
+						ignoreUtil.markFolderIgnored(file)
+					})
+				})
+			}
+		}))
+	}
+	
 	async saveSettings() {
 		await this.saveData(setUtil.data);
 	}

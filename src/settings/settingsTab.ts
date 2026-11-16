@@ -6,7 +6,7 @@ import {
 import NoteClassifier from '../main';
 import { modalManager } from '../tools/modalManager';
 import { setUtil } from './settings';
-import { IgnoredFolderModal } from './Modals/IgnoredFoldersModal';
+import { IgnoredFolderModal } from '../Ignore/IgnoredFoldersModal';
 
 export class NoteClassifierSettingTab extends PluginSettingTab {
 	plugin: NoteClassifier;

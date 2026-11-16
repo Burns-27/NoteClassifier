@@ -5,11 +5,11 @@ import {
 	type FrontMatterCache,
 } from 'obsidian';
 import { appUtils } from '../tools/AppUtils';
-import { getPropertyBooleanValue, getPropertyStringValue } from '../tools/propertyUtils';
+import { getPropertyStringValue } from '../tools/propertyUtils';
 import { setUtil } from '../settings/settings';
-import { checkIgnoredFolder } from '../tools/PathUtils';
 import type { ClsRes, midFile, NoteClsRes, ReportFlags, TCls, TClsFile, updateRes } from '../types';
 import { logs } from '../tools/logClass';
+import { ignoreUtil } from '../Ignore/ignoreUtil';
 
 export class ClsFile implements TClsFile {
 	readonly TFile: TFile;
@@ -41,38 +41,37 @@ export class ClsFile implements TClsFile {
 	}
 	static create(file: TFile): NoteClsRes {
 		let log = new logs('Classify', 'ClsFile Create', true)
-		const checkFolder = checkIgnoredFolder(file.path)
-		log.add('Check Folder Res', checkFolder)
-		if (checkFolder) {
+		//Check Ignored folder, prevent cache pull if not needed. 
+		if (ignoreUtil.checkIgnoredFolder(file, log)) {
 			log.log(`${file.basename} In Ignored Folder`)
 			return {
 				success: false,
 				message:'ignored'
 			}
 		}
+		//get Cache if needed. 
 		const cache = appUtils.getFileCache(file);
+		//Errors if Invalid. 
 		if (!cache) {
 			log.log(`${file.basename} has no cache`)
 			return { success: false, message: 'error' };
 		}
-		const tags = getAllTags(cache);
-		const checkIgnoredProperty = getPropertyBooleanValue(
-			setUtil.base.ignoreFilesProperty,
-			cache.frontmatter,
-		);
-		if (checkIgnoredProperty) {
+		
+		if (ignoreUtil.checkIgnoredProperty(cache.frontmatter??{}, log)) {
 			log.log(`${file.basename} has ignore property`)
 			return {
 				success: false,
 				message:'ignored',
 			};
 		}
+		//Creates Midfile. 
 		const midFile: midFile = {
 			TFile: file,
 			metadataCache: cache,
-			tags: tags,
+			tags: getAllTags(cache)
 		};
 		log.add('MidFile', midFile)
+
 		let cls: TCls | false = false;
 		let resArray: Array<ClsRes> =[]
 		for (const node of setUtil.nodeTree) {
@@ -86,8 +85,8 @@ export class ClsFile implements TClsFile {
 			log.log(`Unable to match ${file.basename} to a classification`)
 			return { success: false, message: 'unable' };
 		}
+		log.log(`${file.basename} Classified as ${cls.name}`)
 		const note = new ClsFile(midFile, cls);
-		 log.log(`${file.basename} Classified as ${cls.name}`)
 		return {
 			success: true,
 			note: note,
@@ -116,7 +115,6 @@ export class ClsFile implements TClsFile {
 
 	validateProperties() {
 		const props = this.cls.allReqProps;
-		
 		let missingflag: boolean = false;
 		let missingProps: string[] = [];
 		let wrongflag: boolean = false;

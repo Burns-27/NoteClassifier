@@ -23,6 +23,23 @@ export class AppUtils {
   public getAllTags(cache: CachedMetadata) {
     return getAllTags(cache)
   }
+  /**
+   * Adds properties, or updates existing properties, with out removing or adjust existing
+   * @param file Obsidian TFile
+   * @param fm the new FM to add or update 
+   * @param log The log instance. 
+   */
+  public async addFM(file: TFile, fm: Record<string, unknown>, log: logs) {
+    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+      try {
+        log.add('starting fm', {...frontmatter})
+        Object.assign(frontmatter, fm)
+        log.add('resulting fm', {...frontmatter})
+      } catch (e) {
+        console.error(e)
+      }
+    })
+  }
   public async processFrontmater(file: TFile, newFM: Record<string, unknown>, flags?:string[]) {
     let log = new logs('Update', 'Process FrontMatter',false)
     log.devRecord({newFM,flags})
