@@ -9,6 +9,7 @@ export interface TCls {
   readonly id: string;
   readonly parentID?: string | null;
   readonly name: string;
+  readonly propOrder:string[]
   reqProps: Map<string, TReqProp>
   allReqProps: Map<string, TReqProp>;
   parentReqProps: Map<string, TReqProp>;

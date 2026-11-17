@@ -105,7 +105,7 @@ export class ClsFile implements TClsFile {
 		return false
 	}
 	public checkProps(): boolean{
-		const log = new Logs('Check', 'File checkProps', false)
+		const log = new Logs('Check', 'File checkProps', true)
 		const props = this.cls.allReqProps;
 		for (const [, prop] of props) {
 			prop.check(this, log);
@@ -118,9 +118,29 @@ export class ClsFile implements TClsFile {
 			return true
 		}
 	}
-	public updateFM() {
-		
+	public async updateFM() {
+		let log = new Logs('Update', 'Update FM', true)
+		const finalFM: Record<string, unknown> = {}
+		delete this.frontmatter[settings.base.flagProperty]
+		delete this.frontmatter[settings.base.classificationProp]
+		const newFM = { ...this.frontmatter, ...this.newFM }
+		Object.assign(this.frontmatter, this.newFM)
+		for (const prop of this.cls.propOrder) {
+			if (prop in newFM) {
+				finalFM[prop] = this.frontmatter[prop]
+				delete newFM[prop]
+			}
+		}
+		for (const leftover of Object.keys(newFM)) {
+			finalFM[leftover] = this.frontmatter[leftover]
+			delete newFM[leftover]
+		}
+		Object.assign(finalFM, this.frontmatter)
+		log.add('FinalFM', finalFM)
+		await appUtils.processFrontmater(this.TFile, finalFM, log)
+		log.log('File Updated')
 	}
+
 	public addFM(property: string, value: unknown) {
 		this.newFM[property] = value
 	}

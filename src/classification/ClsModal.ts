@@ -64,6 +64,7 @@ export class ClsModal extends Modal {
 		if (!this.isRoot) {
 			this.parentProperties()
 		}
+		this.propOrder()
 		this.reqProps()
 		this.children()
 	}
@@ -153,6 +154,17 @@ export class ClsModal extends Modal {
 				})
 			})
 		}
+	}
+	propOrder() {
+		const propOrder = new Setting(this.contentEl)
+		propOrder.setName('Property order')
+		propOrder.addTextArea((text) => {
+			text.onChange((value) => {
+				this.flatCls.propOrder = value.split(',')
+			})
+			text.setValue(this.flatCls.propOrder?.join(`,
+				`)??"")
+		})
 	}
 	children() {
 		const childGroup = new SettingGroup(this.contentEl)

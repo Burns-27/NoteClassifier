@@ -10,7 +10,7 @@ export interface TClsFile {
   checkPropExists: (property: string) => boolean;
   getPropertyString: (property: string) => string | false;
   addFM: (property: string, value: unknown) => void;
-  updateFM: () => void;
+  updateFM: () => Promise<void>;
   flags: flagsProp
 }
 export type midFile = {

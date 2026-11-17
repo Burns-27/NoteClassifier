@@ -28,9 +28,8 @@ export default class NoteClassifier extends Plugin {
 			name: 'Update active file',
 			callback: async () => {
 				console.debug("Update Active File Command Triggered")
-				const file = this.app.workspace.getActiveFile()
+				const file = appUtils.getActiveFile()
 				if (file) {
-					console.debug(`Updating File: ${file.basename}`)
 					await this.updateFile(file)
 				}
 			}
@@ -98,8 +97,9 @@ export default class NoteClassifier extends Plugin {
 		log.add("TCls", clsFile.note)
 		const note = clsFile.note
 		const moved = note.move()
-		const propCheck = note.checkProps()
+		note.checkProps()
 		const flagged = flag.add(note, log)
+		await note.updateFM()
 		return {success:true, ignored:false, moved, flagged}
 	}
 	

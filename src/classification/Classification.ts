@@ -25,6 +25,9 @@ export class Classification implements TCls{
   get name(): string{
     return this.flat.name
   }
+  get propOrder(): string[]{
+    return this.flat.propOrder??[]
+  }
   match(file: midFile, log:Logs): boolean{
     let match: boolean[] = []
     for (const [, rule ]of this.rules) {
@@ -64,7 +67,6 @@ export class Classification implements TCls{
         }
     return reqProp
   }
-
    get parent(): TCls|false{
     if (this.parentID) {
       const parentCls = settings.clsMap.get(this.parentID)
@@ -75,7 +77,6 @@ export class Classification implements TCls{
     return false
   }
  
-  
   public get parentReqProps(): Map<string, TReqProp>{
     let parent = this.parent
     if (parent) {
@@ -83,8 +84,6 @@ export class Classification implements TCls{
     }
     return new Map()
   }
-
- 
   addRule():FlatRule {
     const id = settings.nextID
     let rule: FlatRule = {
