@@ -1,12 +1,8 @@
 
-
+import { Logs } from "../tools"
 import type { midFile } from "../types/files.types"
-import type { FailRes, RuleMatchRes } from "../types/responses.types"
 import type { FlatExactTagRule, FlatIncludeTagRule } from "../types/rules.types"
 import { Rule } from "./Rules"
-
-
-
 
 export class ExactTagRule extends Rule {
   tag: string
@@ -16,23 +12,18 @@ export class ExactTagRule extends Rule {
     this.tag = data.tag
     this.flat = data
   }
-  match(file: midFile): RuleMatchRes{
+  match(file: midFile, log:Logs): boolean{
    if (!file.tags || file.tags.length == 0) {
-      const res: FailRes = {
-        success: false,
-        message:"File Has no tags"
-      }
-      return res
-      
-      }
+     log.add(`Checking ${this.desc}`,'No Tags')
+      return false
+     }
     const check = file.tags.find((t) => t.replace("#",'') == this.tag) 
     if (!check) {
-      const res:FailRes = { success: false, message: "File doesnt have matching tag", context: { fileTags: file.tags, expectedTag: this.tag } }
-      return res
+      log.add(`Checking ${this.desc}`, check)
+      return false
     }
-    return {
-      success: true,
-    }
+    log.add(`Checking ${this.desc}`, check)
+    return true
   }
   get desc(): string{
     return ` has #${this.tag}`
@@ -47,36 +38,25 @@ export class IncludeTagRule extends Rule  {
     this.tag = data.tag
     this.flat = data
   }
-  match(file: midFile): RuleMatchRes{
+  match(file: midFile, log:Logs): boolean{
     if (!file.tags || file.tags.length == 0) {
-      const res: FailRes = {
-        success: false,
-        message:"File has No Tags"
-      }
-      return res
+      log.add(`Checking ${this.desc}`, 'no tags')
+      return false
     }
     let splitTags: string[] = []
     for (const tag of file.tags) {
       splitTags.push(...tag.split('/'))
     }
-    splitTags = splitTags.map((tag)=> tag.replace('#',""))
+    splitTags = splitTags.map((tag) => tag.replace('#', ""))
+    log.add('File Split tags', splitTags)
     const check = splitTags.find((t) => t == this.tag)
+    log.add(`Checking ${this.desc}`, check)
     if (!check) {
-      const res: FailRes = {
-        success: false,
-        message: "No matching tags",
-        context: {
-          fileTags: file.tags,
-          splitTags: splitTags,
-          goalTag:this.tag,
-        }
-      }
-      return res
+      return false
     }
-    return {
-      success: true,
-    }
+    return true
   }
+
   get desc(): string {
     return `includes '#${this.tag}'`
   }

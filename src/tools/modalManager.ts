@@ -2,9 +2,9 @@ import { NodeClass } from "../classification/Classification";
 import type NoteClassifier from "../main";
 import { CreateReqProp } from "../ReqProps/factory";
 import { CreateRule } from "../Rules/Factory";
-import { ClsModal } from "../settings/Modals/ClsModal";
-import { reqPropModal } from "../settings/Modals/reqPropsModal";
-import { RuleModal } from "../settings/Modals/rulesModal";
+import { ClsModal } from "../classification/ClsModal";
+import { reqPropModal } from "../ReqProps/reqPropsModal";
+import { RuleModal } from "../Rules/rulesModal";
 import { FlatReqProp, FlatRule, TCls } from "../types";
 
 
@@ -13,7 +13,6 @@ export class ModalManager {
   private ncp!: NoteClassifier
   private constructor() { }
   
-
   public static getInstance(): ModalManager {
     if (!ModalManager.instance) {
       ModalManager.instance = new ModalManager();

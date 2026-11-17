@@ -6,7 +6,6 @@ import { FlatCls, TCls } from "../types/classifications.types";
 export class SettingsUtil {
   private static instance: SettingsUtil;
   public base: BaseNCPSettings = DEFAULT_BASE_SETTINGS
-
   public flatClsMap: Map<string, FlatCls> = new Map()
   public clsMap: Map<string, TCls> = new Map()
   private nodeMap: Map<string, NodeClass> = new Map()
@@ -120,4 +119,4 @@ export class SettingsUtil {
 
 }
 
-export const setUtil = SettingsUtil.getInstance();
+export const settings = SettingsUtil.getInstance();

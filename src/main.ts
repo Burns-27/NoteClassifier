@@ -1,35 +1,36 @@
 import {
 	Plugin,
 	TFile,
+	TFolder,
 } from 'obsidian';
 import {
 	NoteClassifierSettingTab,
 } from './settings/settingsTab';
-import { NCPData } from './types/settings.types';
-import { appUtils } from './tools/AppUtils';
+
 import { ClsFile } from './classification/ClassifiedFile';
-import { logger } from './tools/logger';
-import { updateRes } from './types/responses.types';
-import { setUtil } from './settings/settings';
-import { logs } from './tools/logClass';
+import { settings } from './settings/settings';
+import { ignore } from './Ignore/ignoreUtil';
+import { flag } from './tools/flaggingUtil';
+import { logger, appUtils, Logs } from './tools';
+import { updateRes, NCPData } from './types';
 
 
 export default class NoteClassifier extends Plugin {
 	async onload() {
 		await this.loadSettings();
-		this.settings = setUtil.data
-		logger.debug('Plugin Loaded', setUtil.base)
+		this.settings = settings.data
+		logger.debug('Plugin Loaded', settings.base)
 		appUtils.ini(this.app)
 		this.addSettingTab(new NoteClassifierSettingTab(this.app, this));
+		this.addIgnoreCommandsAndMenuOptions()
 		this.addCommand({
 			id: `update-active-file`,
 			name: 'Update active file',
 			callback: async () => {
 				console.debug("Update Active File Command Triggered")
-				const file = this.app.workspace.getActiveFile()
+				const file = appUtils.getActiveFile()
 				if (file) {
-					console.debug(`Updating File: ${file.basename}`)
-				  await this.updateFile(file)
+					await this.updateFile(file)
 				}
 			}
 		})
@@ -66,34 +67,25 @@ export default class NoteClassifier extends Plugin {
 			id: "dev-mode",
 			name:'Turn on/off dev mode logs', 
 			callback: () => {
-				const currentDev = setUtil.base.dev
-				setUtil.base.dev = !currentDev
-				this.saveSettings()
+				const currentDev = settings.base.dev
+				settings.base.dev = !currentDev
+				void this.saveSettings()
 			}
 		})	
 	}
 	
 	onunload() {}
 	
-	async updateFile(this: void, file: TFile,): Promise<updateRes> {
-		let log = new logs('Main','Update File', true)
-		
+	async updateFile(file: TFile): Promise<updateRes> {
+		let log = new Logs('Main','Update File', true)
 		const clsFile = ClsFile.create(file)
 		log.add("TFile", file)
-		log.add('ClsFile Results',clsFile)
-		if (clsFile.success) {
-			const res = await clsFile.note.update()
-			log.add('Update res', res)
-			log.log('File Updated')
-			return res
-		} else {
+		if (!clsFile.success) {
+			log.add('ClsFile Results',clsFile)
 			switch(clsFile.message){
 				case 'unable':
-					if(setUtil.base.flagUnclassified){
-						await appUtils.processFrontmater(file, {},['Unable to Classify'])
-					}
 					log.log(`Unable to Classify ${file.basename}`)
-					return {success:true, ignored:false, moved:false, flagged:setUtil.base.flagUnclassified}
+					return {success:true, ignored:false, moved:false, flagged:settings.base.flagUnclassified}
 				case 'ignored':
 					log.log(`${file.basename} is Ignored`)
 					return {success:true, ignored:true, moved:false, flagged:false}
@@ -101,14 +93,60 @@ export default class NoteClassifier extends Plugin {
 					log.log(`Error in Classifying ${file.basename}`)
 					return {success:false}
 			}
-		}
+		} 
+		log.add("TCls", clsFile.note)
+		const note = clsFile.note
+		const moved = note.move()
+		note.checkProps()
+		const flagged = flag.add(note, log)
+		await note.updateFM()
+		return {success:true, ignored:false, moved, flagged}
 	}
-
+	
+	addIgnoreCommandsAndMenuOptions() {
+		this.addCommand({
+			id: 'ignore-file',
+			name: 'Ignore active file',
+			checkCallback: (checking: boolean) => {
+				const log = new Logs('Settings', 'ignore active file', false)
+				const file = appUtils.getActiveFile()
+				log.add('Active file check', file)
+				if (file) {
+					if (!checking) {
+						ignore.markFile(file,log)
+					}
+					return true
+				}
+				return false
+			}
+		})
+		this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+			let log = new Logs('Settings', 'ignore file menu', false)
+			if (file instanceof TFile) {
+				menu.addItem((item) => {
+					item.setTitle('Ignore file')
+					item.setIcon('document')
+						.onClick(() => {
+						ignore.markFile(file, log)
+					})
+				})
+			} else if (file instanceof TFolder) {
+				menu.addItem((item) => {
+					item.setTitle('Ignore folder')
+					item.setIcon('folder')
+					item.onClick(() => {
+						ignore.markFolder(file)
+					})
+				})
+			}
+		}))
+	}
+	
 	async saveSettings() {
-		await this.saveData(setUtil.data);
+		await this.saveData(settings.data);
 	}
 	async loadSettings() {
 		const data = await this.loadData() as Partial<NCPData>;
-		setUtil.load(data)
+		settings.load(data)
 	}
 }

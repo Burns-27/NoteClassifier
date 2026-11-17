@@ -1,11 +1,11 @@
 
+import { Logs } from "../tools"
 import { midFile } from "./files.types"
-import {RuleMatchRes } from "./responses.types"
 export type FlatRule = FlatTagRule | FlatPropertyRule
 
 export interface TRule {
   desc: string
-  match: (file: midFile) => RuleMatchRes
+  match: (file: midFile, log:Logs) => boolean
   clsName: string
   id: string,
   flat:FlatRule,
@@ -26,6 +26,7 @@ export type FlatIncludeTagRule = {
   tag: string,
 }
 export type FlatTagRule = FlatExactTagRule | FlatIncludeTagRule
+
 
 
 export type FlatExactPropertyRule = {

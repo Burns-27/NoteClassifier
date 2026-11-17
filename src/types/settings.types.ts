@@ -19,9 +19,11 @@ export type BaseNCPSettings = {
   dev:boolean, 
   SummaryNotice: boolean;
   ErrorNotice: boolean;
-  NoticeProperty: string;
-  flagUnclassified:true;
-  flagFallbackDefault: boolean;
+  flagProperty: string;
+  flagUnclassified:boolean;
+	flagFallback: boolean;
+	flagPropsMissing: boolean;
+	flagPropsInvalid: boolean;
   pathFallbackDefault: 'Prop' | 'Skip';
   ignoredFolders: string[];
   ignoreFilesProperty: string;
@@ -35,14 +37,6 @@ export type NCPData = {
   reqProps: Record<string, FlatReqProp>,
 } & BaseNCPSettings
 
-export type settingKeys =
-	| 'nextID'
-	| 'ErrorNotice'
-	| 'SummaryNotice'
-	| 'NoticeProperty'
-	| 'debug' |'dev'
-	| 'ignoredFolders'
-	| 'ignoreFilesProperty'|'addMissingProps'|'classificationProp'|'addClassificationProp'|'flagUnclassified';
 
 export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
 	nextID: 1,
@@ -50,9 +44,11 @@ export const DEFAULT_BASE_SETTINGS:BaseNCPSettings = {
   dev:false, 
 	SummaryNotice: true,
 	ErrorNotice: true,
-	NoticeProperty: 'NC_Notice',
+	flagProperty: 'NC_Notice',
 	flagUnclassified:true,
-	flagFallbackDefault: false,
+	flagFallback: true,
+	flagPropsInvalid: true,
+	flagPropsMissing:true,
 	pathFallbackDefault: 'Skip',
 	ignoredFolders: [],
 	ignoreFilesProperty: 'NCP_Ignore',

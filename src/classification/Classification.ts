@@ -1,8 +1,9 @@
 
 import { reqPropFactory } from "../ReqProps/factory";
 import { RuleFactory } from "../Rules/Factory";
-import { setUtil } from "../settings/settings";
-import { logs } from "../tools/logClass";
+import { settings } from "../settings/settings";
+import { Logs } from "../tools";
+
 import { TRule, TReqProp, midFile, ClsRes, FlatRule,  FlatReqProp } from "../types";
 import { TCls, FlatCls } from "../types/classifications.types";
 
@@ -24,30 +25,19 @@ export class Classification implements TCls{
   get name(): string{
     return this.flat.name
   }
-  match(file: midFile): ClsRes{
-    let log = new logs('Classify', `Classification Match on ${this.name}`,false)
+  get propOrder(): string[]{
+    return this.flat.propOrder??[]
+  }
+  match(file: midFile, log:Logs): boolean{
     let match: boolean[] = []
-    let rulesMap: Map<string, { rule: FlatRule, match: boolean }> = new Map()
-    for (const [key, rule ]of this.rules) {
-      const check = rule.match(file)
-      rulesMap.set(key, {rule: rule.flat, match:check.success})
-      match.push(check.success)
+    for (const [, rule ]of this.rules) {
+      const check = rule.match(file, log)
+      match.push(check)
     }
     
     const matchsimplified = !match.includes(false)
-    log.devRecord({match, rulesMap, matchsimplified})
-    if (matchsimplified) {
-      log.log('Matched')
-      return  {
-        success: true,
-        cls:this
-      }
-    } else {
-      log.log('Not A Match')
-      return {
-        success:false,
-      }
-    }
+    log.add(`Results of Matching ${this.name}`,{match, matchsimplified})
+    return matchsimplified
   }
   get path(): string[]{
     const clsDest = this.destination.split('/')
@@ -77,10 +67,9 @@ export class Classification implements TCls{
         }
     return reqProp
   }
-
    get parent(): TCls|false{
     if (this.parentID) {
-      const parentCls = setUtil.clsMap.get(this.parentID)
+      const parentCls = settings.clsMap.get(this.parentID)
       if (parentCls) {
         return parentCls
       }
@@ -88,7 +77,6 @@ export class Classification implements TCls{
     return false
   }
  
-  
   public get parentReqProps(): Map<string, TReqProp>{
     let parent = this.parent
     if (parent) {
@@ -96,10 +84,8 @@ export class Classification implements TCls{
     }
     return new Map()
   }
-
- 
   addRule():FlatRule {
-    const id = setUtil.nextID
+    const id = settings.nextID
     let rule: FlatRule = {
       type: 'property',
       matchType: "exact",
@@ -108,19 +94,20 @@ export class Classification implements TCls{
       id:id
     }
     this.flat.rules.push(id)
-    setUtil.ruleMap.set(id, rule)
+    settings.ruleMap.set(id, rule)
     this.rules = RuleFactory(this.flat.rules, this.name)
     return rule
   }
   addReqProp(): FlatReqProp{
-    const id = setUtil.nextID
+    const id = settings.nextID
     let prop: FlatReqProp = {
       id,
       type: 'exists',
-      propertyName:''
+      propertyName: '',
+      defaultValue:'', 
     }
     this.flat.requriedProperties.push(id)
-    setUtil.reqPropMap.set(id, prop)
+    settings.reqPropMap.set(id, prop)
     this.reqProps = reqPropFactory(this.flat.requriedProperties, this.name)
     return prop
   }
@@ -136,18 +123,21 @@ export class NodeClass {
     this.id = classification.id
     this.isRoot = !classification.parent
   }
-  search(file: midFile): ClsRes{
-    let res = this.cls.match(file)
-    if (res.success && (this.children.length > 0)) {
-      for (const child of this.children) {
-        const deeperMatch = child.search(file)
-        if (deeperMatch.success) {
-          res = deeperMatch
-          return res
+  search(file: midFile, log:Logs): ClsRes{
+    let clsCheck = this.cls.match(file, log)
+    if (clsCheck) {
+      if (this.children.length > 0) {
+        for (const child of this.children) {
+          const deeperMatch = child.search(file, log)
+          if (deeperMatch.success) {
+            return deeperMatch
+          }
         }
+      } else {
+        return { success: true, cls: this.cls }
       }
     }
-    return res
+    return {success: false}
   }
 }
 
