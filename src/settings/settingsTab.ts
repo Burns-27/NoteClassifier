@@ -74,7 +74,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						desc: 'the property used to indicate a file has errors',
 						control: {
 							type: 'text',
-							key: 'NoticeProperty',
+							key: 'flagProperty',
 						},
 					},
 					{
@@ -174,6 +174,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 							settings.ignoredFoldersSet.delete(
 								ignoredFolders[index] ?? '',
 							);
+							void this.plugin.saveSettings()
 							this.update();
 						},
 						items: ignoredFolders.map((f) => ({

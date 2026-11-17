@@ -1,92 +1,124 @@
-# Obsidian Sample Plugin
+# Note Classifier
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Note Classifier sorts notes into folders using their tags and frontmatter. Run an update command when you want it to classify notes, move them, check required properties, and add configured classification or issue properties. It does not run automatically when a note is edited.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Use cases
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+- Keep book notes together in folders based on frontmatter such as `Author`, `Series`, or `Genre`.
+- Reorganize a vault by changing classification destinations and running **Update all files**.
+- Identify notes that need attention by requiring properties such as `Author` or by limiting a property to a set of allowed values.
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+For example, a `Book` classification could match notes with `Type: Book`, move them into `Books/[Author|Unknown author]`, and require an `Author` property.
 
-## First time developing plugins?
+## Create a classification
 
-Quick starting guide for new plugin devs:
+1. Open **Settings → Note Classifier → Edit Classifications**.
+2. Select **Add Classification**. Give it a name and a destination.
+3. Under **Match Rules**, add one or more rules that identify the notes for this classification.
+4. Under **Required Properties for this classification**, add properties the note should have.
+5. To make a more specific classification, add it as a child classification. Child classifications inherit their parent’s required properties.
+6. Run **Update active file** or **Update all files** to apply your changes.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+Every rule on a classification must match. A classification with no rules matches any note, so add a rule unless you want it to act as a catch-all. For a parent with child classifications, a matching child is preferred; if no child matches, the parent is used. Keep top-level classifications distinct to avoid ambiguous matches.
 
-## Releasing new releases
+## Classification options
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+- **Classification name** identifies the classification and is used as the value for the classification property when that setting is enabled.
+- **Description** is an optional note to help you recognize the classification in settings.
+- **Destination** sets the folder path for matching notes. See [Build a destination](#build-a-destination).
+- **Match Rules** determine which notes qualify. See [Matching rules](#matching-rules).
+- **Required Properties** check frontmatter and can add missing values when **Add Missing Properties** is enabled. A child classification also checks required properties inherited from its parents.
+- **Property order** lets you enter comma-separated property names to set their order in updated frontmatter.
+- **Child Classifications** let you refine a parent classification with more specific rules and destinations.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### Matching rules
 
-## Adding your plugin to the community plugin list
+Add rules under **Match Rules**. If a classification has multiple rules, the note must satisfy all of them.
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+#### Property rule
 
-## How to use
+Matches when a frontmatter property has the specified value. Matching is exact and case-sensitive. For example, a rule for property `Type` and value `Book` matches `Type: Book`, but not `Type: book`.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+#### Tag rule
 
-## Manually installing the plugin
+Enter the tag without the leading `#`, such as `book` or `book/fiction`, then choose **Matching strictness**:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- **Matches exactly** matches the complete tag. For example, `book` matches `#book`, but not `#book/fiction`.
+- **Inclusive match** matches a tag segment, including a segment in a nested tag. For example, `book` matches `#book/fiction`.
 
-## Improve code quality with eslint
+### Required properties
 
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+Each required property has a type:
 
-## Funding URL
+- **Has Property** checks that the note has the named property. Set a **Default value** to use if the property is missing and **Add Missing Properties** is enabled.
+- **Property is one of these values** checks the property against a comma-separated list of allowed values. Values are case-sensitive. Choose a **Default value** from the list to use when the property is missing and **Add Missing Properties** is enabled.
 
-You can include funding URLs where people who use your plugin can financially support it.
+Missing required properties can be flagged. A property with a value outside its allowed values can be flagged as invalid. Use the **File Flags** settings to control those flags.
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+## Build a destination
 
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
-```
+Write destination folders as path segments separated by `/`. A segment can be a literal folder name or a frontmatter property:
 
-If you have multiple URLs, you can also do:
+- `Books` is a literal folder.
+- `[Author]` uses the note’s `Author` property as the folder name.
+- `[Author|Unknown author]` uses the `Author` value, or `Unknown author` when it is missing. This explicit fallback takes precedence over **Default Path fallback**.
+- `*` as the first segment of a child destination inherits the parent classification’s destination.
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
-```
+For example, set the parent destination to `Projects/[Client|Unassigned]` and the child destination to `*/[Status|Inbox]`. A note with `Client: Acme` and no `Status` is moved to `Projects/Acme/Inbox`.
 
-## API Documentation
+When a property segment has no explicit fallback, **Default Path fallback** controls what happens:
 
-See https://docs.obsidian.md
+- **Property** uses the property name as the folder name when its value is missing. For example, `[Status]` becomes `Status`.
+- **Skip** leaves the missing property segment empty.
+
+The destination folders are created as needed when an update moves a note.
+
+## Settings
+
+### Classifications
+
+Use **Edit Classifications** to add, edit, and organize classifications and their rules, required properties, destinations, and child classifications.
+
+### Classification property
+
+- **Add Classification Prop** adds the matched classification name to each updated note.
+- **Classification Property** sets the frontmatter property used for that value (default: `NC_Class`).
+
+### File flags
+
+Flags are recorded in the property configured by **Notice Property** (default: `NC_Notice`).
+
+- **Flag Unclassified Files** flags notes that match no classification.
+- **Flag For default** flags notes that use the default fallback for a missing destination property.
+- **Flag Missing Properties** flags notes missing required properties.
+- **Flag Invalid Properties** flags notes whose required property values are not allowed.
+
+### Notices
+
+- **Summary Notice** shows a summary after an update command.
+- **Error Notice** shows a notice when a file cannot be processed by a command.
+
+### Behavior
+
+- **Add Missing Properties** adds configured default values for missing required properties when notes are updated. It is off by default.
+- **Default Path fallback** controls missing destination property segments that do not specify their own fallback. Choose **Property** or **Skip**.
+
+### Ignored files and folders
+
+- **Ignore property** sets the frontmatter property used to ignore a note (default: `NCP_Ignore`). Set it to `true` on a note to exclude it from updates.
+- **Ignored Folders** lists folders to exclude from classification.
+
+### Debugging
+
+**Debug Mode** enables plugin logs in Obsidian’s developer tools. The **Turn on/off dev mode logs** command toggles more detailed logs.
+
+## Commands
+
+Run these from Obsidian’s command palette:
+
+- **Update active file** classifies and updates the currently open note.
+- **Update all files** classifies and updates all Markdown notes in the vault.
+- **Ignore active file** marks the currently open note to be ignored.
+- **Turn on/off dev mode logs** toggles detailed plugin logs.
+
+You can also use the file explorer context menu to select **Ignore file** or **Ignore folder**, as well as **Update File** or **Update Folder**

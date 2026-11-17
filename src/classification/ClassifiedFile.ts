@@ -96,7 +96,7 @@ export class ClsFile implements TClsFile {
 	}
 	public move(): boolean{
 		let log = new Logs('Move', 'File Move', true)
-		if (this.TFile.path !== `${this.destination}.${this.TFile.name}`) {
+		if (this.TFile.path !== `${this.destination}/${this.TFile.name}`) {
 			void appUtils.moveFile(this, log)
 			log.log(`Moved ${this.TFile.basename} to ${this.destination}`)
 			return true
@@ -188,7 +188,7 @@ export class ClsFile implements TClsFile {
 	}
 	checkPropExists(property: string): boolean {
 		const value: unknown = this.frontmatter[property];
-		if(value !== undefined||value !== null) {
+		if(value !== undefined&&value !== null) {
 			return true;
 		} else {
 			return false;

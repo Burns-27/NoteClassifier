@@ -136,6 +136,7 @@ export default class NoteClassifier extends Plugin {
 					item.setIcon('folder')
 					item.onClick(() => {
 						ignore.markFolder(file)
+						void this.saveSettings()
 					})
 				})
 			}

@@ -64,9 +64,9 @@ export class IgnoreUtil {
  * @param log  The log instance
  */
 public markFile(file: TFile, log:Logs) {
-  const prop = settings.base.ignoreFilesProperty
+ 
   const newFM: Record<string, unknown> = {}
-  newFM[prop] = false
+  newFM[this.prop] = true
   log.add('newFM passed to apputil', newFM)
   void appUtils.addFM(file, newFM, log)
 }

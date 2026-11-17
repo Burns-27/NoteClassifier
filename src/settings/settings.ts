@@ -70,15 +70,25 @@ export class SettingsUtil {
   }
   public deleteCls(id: string) {
     const node = this.nodeMap.get(id)
-    if (node && node.children) {
-      for (const child of node.children) {
+    if (node) {
+      if (node.children) {
+        for (const child of node.children) {
         this.deleteCls(child.id)
       }
+      }
+      if (!node.isRoot) {
+        const parentNode = this.nodeMap.get(node.cls.parentID??'')
+        if (parentNode) {
+          parentNode.children = parentNode.children.filter((c)=>c.id != id)
+        } 
+      } else {
+        this.nodeTree = this.nodeTree.filter((n)=>n.id != id)
+      }
+      
     }
     this.flatClsMap.delete(id)
     this.clsMap.delete(id)
     this.nodeMap.delete(id)
-    this.nodeTree = this.nodeTree.filter((n)=>n.id != id)
   }
   public newCls(parentID?: string): {cls:TCls, node:NodeClass}{
     const parIdCheck = parentID ? { parentID: parentID } : {}

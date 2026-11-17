@@ -93,9 +93,9 @@ export class Classification implements TCls{
       propertyValue: "",
       id:id
     }
+    this.rules = RuleFactory(this.flat.rules, this.name)
     this.flat.rules.push(id)
     settings.ruleMap.set(id, rule)
-    this.rules = RuleFactory(this.flat.rules, this.name)
     return rule
   }
   addReqProp(): FlatReqProp{
@@ -106,9 +106,9 @@ export class Classification implements TCls{
       propertyName: '',
       defaultValue:'', 
     }
+    this.reqProps = reqPropFactory(this.flat.requriedProperties, this.name)
     this.flat.requriedProperties.push(id)
     settings.reqPropMap.set(id, prop)
-    this.reqProps = reqPropFactory(this.flat.requriedProperties, this.name)
     return prop
   }
 }
@@ -133,10 +133,10 @@ export class NodeClass {
             return deeperMatch
           }
         }
-      } else {
+      } 
         return { success: true, cls: this.cls }
       }
-    }
+    
     return {success: false}
   }
 }
