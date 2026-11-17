@@ -1,5 +1,5 @@
 
-import { setUtil } from "../settings/settings"
+import { settings } from "../settings/settings"
 import { FlatReqProp, TReqProp } from "../types"
 import { ReqPropHas } from "./exists"
 import { ReqPropOptions } from "./options"
@@ -7,7 +7,7 @@ import { ReqPropOptions } from "./options"
 export function reqPropFactory(idArray: string[], clsName:string): Map<string, TReqProp> {
   let map = new Map<string, TReqProp>()
   for (const id of idArray) {
-    const flatReqProp = setUtil.reqPropMap.get(id)
+    const flatReqProp = settings.reqPropMap.get(id)
     if (flatReqProp) {
       map.set(id, CreateReqProp(flatReqProp, clsName))
     }

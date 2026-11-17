@@ -1,8 +1,8 @@
 
-import { FrontMatterCache } from "obsidian"
-import { getPropertyStringValue } from "../tools/propertyUtils"
-import type { FlatReqPropHas, PropCheckRes } from "../types"
+import type { FlatReqPropHas,  TClsFile } from "../types"
 import { ReqProp } from "./ReqProp"
+import { settings } from "../settings/settings"
+import { Logs } from "../tools"
 
 
 
@@ -15,15 +15,16 @@ export class ReqPropHas extends ReqProp {
     get desc(): string {
         return `File has "${this.propName}" property, and it is not empty`
     }
-    check(fm:FrontMatterCache): PropCheckRes {
-        const check = getPropertyStringValue(this.propName, fm)
-        if (!check) {
-            return {
-                check: false,
-                type: 'has',
-                prop: this.propName
-            }
+    check(file:TClsFile, log:Logs) {
+        const check = file.checkPropExists(this.propName)
+        log.add(`Check ${this.propName}`, check)
+        if (check) {
+            return 
         }
-        return { check: true }
+        if (settings.base.addMissingProps) { 
+            file.addFM(this.propName, this.flat.defaultValue)
+        }
+        file.flags.propsMissing = true
+        return 
     }
 }

@@ -1,7 +1,7 @@
 import {  Modal, Setting, SettingGroup } from 'obsidian';
 import NoteClassifier from '../main';
 import { modalManager } from '../tools/modalManager';
-import { setUtil } from '../settings/settings';
+import { settings } from '../settings/settings';
 import { NodeClass } from './Classification';
 import { FlatCls, TCls } from '../types';
 
@@ -28,7 +28,7 @@ export class ClsModal extends Modal {
 		this.display();
 		this.setCloseCallback(() => {
 			console.debug(`Closing Classification Modal for ${this.flatCls.name}`)
-			setUtil.clsMap.set(this.flatCls.id, this.cls)
+			settings.clsMap.set(this.flatCls.id, this.cls)
 			void ncp.saveSettings()
 			update()
 		})
@@ -98,7 +98,7 @@ export class ClsModal extends Modal {
 					button.setIcon('x')
 					button.onClick(() => {
 						this.flatCls.rules = this.flatCls.rules.filter((r)=>r!== key)
-						setUtil.ruleMap.delete(key)
+						settings.ruleMap.delete(key)
 						this.display()
 					})
 				})
@@ -147,7 +147,7 @@ export class ClsModal extends Modal {
 					button.setIcon('x')
 					button.onClick(() => {
 						this.flatCls.requriedProperties = this.flatCls.requriedProperties.filter((p) => p !== key)
-						setUtil.reqPropMap.delete(key)
+						settings.reqPropMap.delete(key)
 						this.display()
 					})
 				})
@@ -161,7 +161,7 @@ export class ClsModal extends Modal {
 		childGroup.addExtraButton((button) => {
 			button.setIcon('plus')
 			button.onClick(() => {
-				const {node} = setUtil.newCls(this.cls.id)
+				const {node} = settings.newCls(this.cls.id)
 				modalManager.ClsModal(node, ()=>this.display())
 			})
 		})
@@ -178,7 +178,7 @@ export class ClsModal extends Modal {
 				setting.addExtraButton((button) => {
 					button.setIcon('x')
 					button.onClick(() => {
-						setUtil.deleteCls(child.id)
+						settings.deleteCls(child.id)
 						this.display()
 						void this.ncp.saveSettings()
 					})

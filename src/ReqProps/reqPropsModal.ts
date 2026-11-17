@@ -1,7 +1,7 @@
 import { Modal, Setting } from "obsidian";
-import NoteClassifier from "../main";
+import type NoteClassifier from "../main";
 import { FlatReqProp } from "../types";
-import { setUtil } from "../settings/settings";
+import { settings } from "../settings/settings";
 
 export class reqPropModal extends Modal{
   reqProp: FlatReqProp
@@ -9,6 +9,8 @@ export class reqPropModal extends Modal{
   type: "exists" | "opt"
   propName: string
   propValueOptions?: string
+  defaultValue?: string
+  defaultOption?: string
   constructor(ncp: NoteClassifier, reqProp: FlatReqProp, update: (reqProp: FlatReqProp) => void) {
     super(ncp.app)
     this.reqProp = { ...reqProp }
@@ -17,10 +19,13 @@ export class reqPropModal extends Modal{
     this.propName = reqProp.propertyName
     if (reqProp.type == "opt") {
       this.propValueOptions = reqProp.propVauleOptions.join(', ')
+      this.defaultOption = reqProp.defaultOption
+    } else {
+      this.defaultValue = reqProp.defaultValue
     }
     this.setCloseCallback(() => {
       this.generateReqProp()
-      setUtil.reqPropMap.set(this.id, this.reqProp)
+      settings.reqPropMap.set(this.id, this.reqProp)
       update(this.reqProp)
     })
     this.display()
@@ -52,15 +57,46 @@ export class reqPropModal extends Modal{
       text.setValue(this.propName ?? "Property")
       text.onChange((value) => this.propName = value)
     })
-    if (this.type == 'opt') {
-      const propValueOptions = new Setting(this.contentEl)
+    switch (this.type) {
+      case "exists":
+        this.exists()
+        break
+      case "opt":
+        this.opt()
+        break
+    }
+  }
+  opt() {
+    const propValueOptions = new Setting(this.contentEl)
       propValueOptions.setName('Allowed values')
       propValueOptions.setDesc('Comma seperated, case sensitive list of possible values')
       propValueOptions.addTextArea((text) => {
         text.setValue(this.propValueOptions ?? '')
         text.onChange((value)=>this.propValueOptions = value)
       })
-    }
+    const defaultOption = new Setting(this.contentEl)
+      defaultOption.setName('Default value')
+    defaultOption.setDesc('The default value to use if the property is missing')
+    defaultOption.addDropdown((dropdown) => {
+      const optionsArray = this.propValueOptions?.split(',')??[]
+      const options:Record<string,string> = {}
+      for (const opt of optionsArray) {
+        options[opt] = opt
+      }
+      dropdown.addOptions(options)
+      dropdown.onChange((value)=>this.defaultOption = value)
+    })
+  }
+  exists() { 
+  const defaultValue = new Setting(this.contentEl)
+  defaultValue.setName('Default value')
+  defaultValue.setDesc('Value to use if property is missing')
+  defaultValue.addText((text) => {
+    text.setValue(this.defaultValue ?? "")
+    text.onChange((value) => {
+      this.defaultValue = value
+    })
+  })
   }
   generateReqProp(){
     switch (this.type) {
@@ -68,7 +104,8 @@ export class reqPropModal extends Modal{
         this.reqProp =  {
           id: this.id,
           type: 'exists',
-          propertyName: this.propName
+          propertyName: this.propName,
+          defaultValue: this.defaultValue ?? ''
         }
         return 
       case "opt":
@@ -76,7 +113,8 @@ export class reqPropModal extends Modal{
           id: this.id,
           type: 'opt',
           propertyName: this.propName,
-          propVauleOptions:this.propValueOptions?.split(', ')??['']
+          propVauleOptions: this.propValueOptions?.split(', ') ?? [''],
+          defaultOption: this.defaultOption ?? ''
         }
         return 
     }

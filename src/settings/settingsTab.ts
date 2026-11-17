@@ -5,7 +5,7 @@ import {
 } from 'obsidian';
 import NoteClassifier from '../main';
 import { modalManager } from '../tools/modalManager';
-import { setUtil } from './settings';
+import { settings } from './settings';
 import { IgnoredFolderModal } from '../Ignore/IgnoredFoldersModal';
 
 export class NoteClassifierSettingTab extends PluginSettingTab {
@@ -17,8 +17,8 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 	}
 
 	getSettingDefinitions(): SettingDefinitionItem[] {
-		const rootNodes = setUtil.nodeTree;
-		const ignoredFolders = [...setUtil.ignoredFoldersSet];
+		const rootNodes = settings.nodeTree;
+		const ignoredFolders = [...settings.ignoredFoldersSet];
 		return [
 			{
 				type: 'page',
@@ -30,7 +30,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						addItem: {
 							name: 'Add Classification',
 							action: () => {
-								const { node } = setUtil.newCls();
+								const { node } = settings.newCls();
 								modalManager.ClsModal(node, () =>
 									this.update(),
 								);
@@ -38,7 +38,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 						},
 						onDelete: (index) => {
 							const node = rootNodes[index];
-							setUtil.deleteCls(node?.id ?? 'Error');
+							settings.deleteCls(node?.id ?? 'Error');
 							void this.plugin.saveSettings();
 							this.update();
 						},
@@ -62,7 +62,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 			{
 				name: 'Classification Property',
 				desc: 'The name of the property NCP will use for classificaiton',
-				visible: () => setUtil.base.addClassificationProp,
+				visible: () => settings.base.addClassificationProp,
 				control: { key: 'classificationProp', type: 'text' },
 			},
 			{
@@ -171,7 +171,7 @@ export class NoteClassifierSettingTab extends PluginSettingTab {
 							},
 						},
 						onDelete: (index) => {
-							setUtil.ignoredFoldersSet.delete(
+							settings.ignoredFoldersSet.delete(
 								ignoredFolders[index] ?? '',
 							);
 							this.update();

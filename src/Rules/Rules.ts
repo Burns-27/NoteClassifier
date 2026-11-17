@@ -1,6 +1,6 @@
 
+import { Logs } from "../tools"
 import type { midFile } from "../types/files.types"
-import type  { RuleMatchRes } from "../types/responses.types"
 import type { FlatRule, MatchTypeOpts, RuleTypeOpts, TRule } from "../types/rules.types"
 
 
@@ -19,6 +19,6 @@ export abstract class Rule implements TRule{
     this.clsName = clsName
   }
   
-  abstract match(file:midFile):RuleMatchRes
+  abstract match(file:midFile, log:Logs):boolean
 }
 

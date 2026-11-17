@@ -13,7 +13,6 @@ export class ModalManager {
   private ncp!: NoteClassifier
   private constructor() { }
   
-
   public static getInstance(): ModalManager {
     if (!ModalManager.instance) {
       ModalManager.instance = new ModalManager();

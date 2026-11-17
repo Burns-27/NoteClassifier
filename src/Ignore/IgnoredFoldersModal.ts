@@ -1,7 +1,7 @@
 import { FuzzySuggestModal} from 'obsidian';
-import { setUtil } from '../settings/settings';
+import { settings } from '../settings/settings';
 import NoteClassifier from '../main';
-import { ignoreUtil } from './ignoreUtil';
+import { ignore } from './ignoreUtil';
 
 export class IgnoredFolderModal extends FuzzySuggestModal<string> {
     private ncp: NoteClassifier
@@ -23,9 +23,9 @@ export class IgnoredFolderModal extends FuzzySuggestModal<string> {
     }
 
     onChooseItem(folder: string, evt: MouseEvent | KeyboardEvent): void {
-        ignoreUtil.markFolderIgnored(folder)
+        ignore.markFolder(folder)
         void this.ncp.saveSettings();
-        console.debug('Ignored Folder Set after add', setUtil.ignoredFoldersSet)
+        console.debug('Ignored Folder Set after add', settings.ignoredFoldersSet)
         this.update()
     }
 }

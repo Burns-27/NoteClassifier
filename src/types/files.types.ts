@@ -1,11 +1,16 @@
 import { CachedMetadata, TFile } from "obsidian";
-import { updateRes } from "./responses.types";
 
 export interface TClsFile {
   readonly TFile: TFile, 
   readonly name: string,
   readonly destination: string,
-  update: () => Promise<updateRes>, 
+  readonly clsName:string, 
+  move: () => boolean;
+  checkProps: () => boolean;
+  checkPropExists: (property: string) => boolean;
+  getPropertyString: (property: string) => string | false;
+  addFM: (property: string, value: unknown) => void;
+  updateFM: () => void;
   flags: flagsProp
 }
 export type midFile = {

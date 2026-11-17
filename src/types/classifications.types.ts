@@ -1,6 +1,6 @@
+import { Logs } from "../tools";
 import { midFile } from "./files.types";
 import { TReqProp, FlatReqProp } from "./reqProps.types";
-import { ClsRes } from "./responses.types";
 import { TRule, FlatRule } from "./rules.types";
 
 
@@ -15,7 +15,7 @@ export interface TCls {
   rules: Map<string, TRule>, 
   path: string[],
   parent:TCls|false
-  match: (file: midFile) => ClsRes,
+  match: (file: midFile, log:Logs) => boolean,
   flat: FlatCls
   addRule: () => FlatRule
   addReqProp:()=>FlatReqProp

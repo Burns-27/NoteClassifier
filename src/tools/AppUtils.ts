@@ -1,8 +1,12 @@
 import { App, CachedMetadata, getAllTags, normalizePath, TFile } from "obsidian";
-import { devlog, logger } from "./logger";
-import { setUtil } from "../settings/settings";
-import { logs } from "./logClass";
-
+import {  logger } from "./logger";
+import { Logs } from "./logClass";
+import { TClsFile } from "../types";
+/**
+ * App util is the class that handles the interaction with the Obsidian app, and the vault.
+ * It is a singleton class,
+ * It is initialized in the main.ts file, during onload. 
+ */
 export class AppUtils {
   private static instance: AppUtils;
   private app!: App;
@@ -29,7 +33,7 @@ export class AppUtils {
    * @param fm the new FM to add or update 
    * @param log The log instance. 
    */
-  public async addFM(file: TFile, fm: Record<string, unknown>, log: logs) {
+  public async addFM(file: TFile, fm: Record<string, unknown>, log: Logs) {
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       try {
         log.add('starting fm', {...frontmatter})
@@ -40,49 +44,56 @@ export class AppUtils {
       }
     })
   }
-  public async processFrontmater(file: TFile, newFM: Record<string, unknown>, flags?:string[]) {
-    let log = new logs('Update', 'Process FrontMatter',false)
-    log.devRecord({newFM,flags})
-    let removeFlag:boolean = false
-    if(flags && flags.length !==0){
-      newFM[setUtil.base.NoticeProperty] = flags
-    } else {
-      removeFlag = true
-    }
+  /**
+   * Replaces frontmatter entirely
+   * @param file Obsidian TFile
+   * @param newFM The new Frontmatter Object
+   * @param log the log instance. 
+   */
+  public async processFrontmater(file: TFile, newFM: Record<string, unknown>, log:Logs) {
     await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
       try {
-        Object.assign(frontmatter, newFM)
-        if (removeFlag) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- frontmatter is weird (And any by default)
-          delete frontmatter[setUtil.base.NoticeProperty]
-        }
-        log.add('Resulting FM', frontmatter)
-        log.log('Updated')
+        frontmatter = newFM
+        log.add('Finished Frontmatter', {...frontmatter})
       } catch (e) {
         console.debug(e)
       }
     })
   }
-  public async moveFile(file: TFile, destination: string, folderArray: string[]) {
-    let log = devlog.start('Move', "Move File")
-    log.info.destination = destination
-    log.info.folderArray = folderArray
+  /**
+   * 
+   * @returns the active workspace file, or false
+   */
+  public getActiveFile(): TFile | false{
+		const file = this.app.workspace.getActiveFile()
+				if (file) {
+					return file
+				} 
+			return false
+  }
+  /**
+   * Checks destination path, creates missing folders, and moves the file to the new destination.
+   * @param file The classified file
+   * @param log the log instance
+   */
+  public async moveFile(file: TClsFile, log:Logs) {
+    let folderArray = file.destination.split('/')
     let madeFilesArray:string[]=[]
     let path: string = ''
-    for( let folder of folderArray){
-      path = path ? `${path}/${folder}` : folder
-      const check = this.app.vault.getFolderByPath(normalizePath(path))
+    for (let folder of folderArray) {
+      path = normalizePath(`${path}/${folder}`)
+      const check = this.app.vault.getFolderByPath(path)
       if (!check) {
           madeFilesArray.push(path)
-          await this.app.vault.createFolder(normalizePath(path))
+          await this.app.vault.createFolder(path)
       }
     }
-    log.extra.madeFiles = madeFilesArray
-    log.extra.createdPath = path
+    log.add('Made Folders', madeFilesArray)
     const check = this.app.vault.getFolderByPath(path)
-    log.extra.destinationFileExists = !!check
-    devlog.loc(log)
-    this.app.fileManager.renameFile(file, destination).catch((e)=>logger.debug(e))
+    log.add('Destination folder', check)
+    const finalPath = normalizePath(`${path}/${file.TFile.name}`)
+    log.add('final path', finalPath)
+    this.app.fileManager.renameFile(file.TFile, finalPath).catch((e)=>logger.debug(e))
   }
 }
 

@@ -1,8 +1,8 @@
-import { setUtil } from '../settings/settings';
+import { settings } from '../settings/settings';
 
-type pathStrings = 'Classify' | 'Move' | 'Settings' | 'Props' | 'Main'|'Update';
+type pathStrings = 'Classify' | 'Move' | 'Settings' | 'Check' | 'Main'|'Update';
 
-export class logs {
+export class Logs {
 	private path: pathStrings;
 	private loc: string;
 	public msg: string = '';
@@ -28,7 +28,7 @@ export class logs {
 		if (msg) {
 			this.msg = msg;
 		}
-		switch (setUtil.logLevel) {
+		switch (settings.logLevel) {
 			case 'dev':
 				if(this.current){
 					console.debug(this.msgString,this.dev);
